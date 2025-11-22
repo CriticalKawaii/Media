@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
+import android.widget.Toast
 import com.kiryusha.media.R
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
@@ -13,43 +14,99 @@ import com.kiryusha.media.repository.UserRepository
 import com.kiryusha.media.utils.SecurityUtils
 import kotlinx.coroutines.launch
 import androidx.core.content.edit
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
+import com.kiryusha.media.utils.ValidationUtils
 
 class RegistrationActivity : AppCompatActivity() {
     private lateinit var repository: UserRepository
+    private lateinit var etLogin: TextInputEditText
+    private lateinit var etUsername: TextInputEditText
+    private lateinit var etPassword: TextInputEditText
+    private lateinit var etConfirmPassword: TextInputEditText
+    private lateinit var tilLogin: TextInputLayout
+    private lateinit var tilUsername: TextInputLayout
+    private lateinit var tilPassword: TextInputLayout
+    private lateinit var tilConfirmPassword: TextInputLayout
 
     override fun onCreate(savedInstanceState: Bundle?){
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_registration)
+
         repository = UserRepository(MediaApplication.database.userDao())
 
-        val registerButton = findViewById<Button>(R.id.btn_register).setOnClickListener { registerUser(
-                R.id.et_login.toString(),
-            R.id.et_username.toString(),
-            R.id.et_password.toString(),
-            R.id.et_confirm_password.toString()) }
+        etLogin = findViewById(R.id.et_login)
+        etUsername = findViewById(R.id.et_username)
+        etPassword = findViewById(R.id.et_password)
+        etConfirmPassword = findViewById(R.id.et_confirm_password)
+        tilLogin = findViewById(R.id.til_login)
+        tilUsername = findViewById(R.id.til_username)
+        tilPassword = findViewById(R.id.til_password)
+        tilConfirmPassword = findViewById(R.id.til_confirm_password)
 
-        val loginLink = findViewById<TextView>(R.id.tv_login).setOnClickListener { startActivity(
-            Intent(this, LoginActivity::class.java)) }
-    }
+        val registerButton = findViewById<MaterialButton>(R.id.btn_register)
+        val loginLink = findViewById<TextView>(R.id.tv_login)
 
-    private fun registerUser(login: String, username: String, password: String, confirmPassword: String){
-        lifecycleScope.launch {
-            val hashedPassword = SecurityUtils.hashPassword(password)
-            repository.registerUser(User(login = login, userName = username, password = hashedPassword))
-
-            val user = repository.loginUser(login, hashedPassword)
-            if(user != null){
-                saveUserSession(user.uid)
-                startActivity(Intent(this@RegistrationActivity, MainActivity::class.java))
-                finish()
+        registerButton.setOnClickListener {
+            if (ValidationUtils.isValidEmail(etLogin.text.toString().trim()) &&
+                ValidationUtils.isValidUsername(etUsername.text.toString().trim()).first &&
+                ValidationUtils.validatePassword(etPassword.text.toString()).first &&
+                ValidationUtils.doPasswordsMatch(etPassword.text.toString(), etConfirmPassword.text.toString())
+            ) {
+                registerUser()
             }
         }
+
+        loginLink.setOnClickListener {
+            finish()
+        }
     }
-    private fun saveUserSession(userId: Int) {
-        getSharedPreferences("user_prefs", MODE_PRIVATE)
-            .edit {
-                putInt("user_id", userId)
-                    .putBoolean("is_logged_in", true)
+
+    private fun registerUser() {
+        val login = etLogin.text.toString().trim()
+        val username = etUsername.text.toString().trim()
+        val password = etPassword.text.toString()
+
+        lifecycleScope.launch {
+            try{
+                if (repository.isLoginTaken(login)){
+                    tilLogin.error = "Этот email уже зарегистрирован"
+                    Toast.makeText(this@RegistrationActivity, "Email уже используется", Toast.LENGTH_SHORT).show()
+                    return@launch
+                }
+
+                val hashedPassword = SecurityUtils.hashPassword(password)
+                val user = User(
+                    login = login,
+                    userName = username,
+                    password = hashedPassword
+                )
+
+                val success = repository.registerUser(user)
+
+                if (success) {
+                    Toast.makeText(
+                        this@RegistrationActivity,
+                        "Регистрация успешна! Теперь войдите в систему",
+                        Toast.LENGTH_LONG
+                    ).show()
+
+                    finish()
+                } else {
+                    Toast.makeText(
+                        this@RegistrationActivity,
+                        "Ошибка регистрации. Попробуйте снова ",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            } catch (e: Exception){
+                Toast.makeText(
+                    this@RegistrationActivity,
+                    "Ошибка: ${e.message}",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
+        }
     }
 }
