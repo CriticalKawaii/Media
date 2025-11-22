@@ -1,15 +1,14 @@
-package com.kiryusha.media.models
+package com.kiryusha.media.database.entities
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import java.util.Date
 
 @Entity
 data class User(
-    @PrimaryKey val uid: Int,
+    @PrimaryKey(autoGenerate = true) val uid: Int = 0,
     @ColumnInfo(name = "login") val login: String,
     @ColumnInfo(name = "user_name") val userName: String,
-    @ColumnInfo(name = "first_name") val firstName: String,
-    @ColumnInfo(name = "last_name") val lastName: String,
     @ColumnInfo(name = "password") val password: String,
 )
