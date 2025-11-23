@@ -49,11 +49,7 @@ class RegistrationActivity : AppCompatActivity() {
         val loginLink = findViewById<TextView>(R.id.tv_login)
 
         registerButton.setOnClickListener {
-            if (ValidationUtils.isValidEmail(etLogin.text.toString().trim()) &&
-                ValidationUtils.isValidUsername(etUsername.text.toString().trim()).first &&
-                ValidationUtils.validatePassword(etPassword.text.toString()).first &&
-                ValidationUtils.doPasswordsMatch(etPassword.text.toString(), etConfirmPassword.text.toString())
-            ) {
+            if (validateInput()) {
                 registerUser()
             }
         }
@@ -61,6 +57,50 @@ class RegistrationActivity : AppCompatActivity() {
         loginLink.setOnClickListener {
             finish()
         }
+    }
+    private fun validateInput(): Boolean {
+        var isValid = true
+
+        val login = etLogin.text.toString().trim()
+        val username = etUsername.text.toString().trim()
+        val password = etPassword.text.toString()
+        val confirmPassword = etConfirmPassword.text.toString()
+
+        tilLogin.error = null
+        tilUsername.error = null
+        tilPassword.error = null
+        tilConfirmPassword.error = null
+
+        if (!ValidationUtils.isValidEmail(login)) {
+            tilLogin.error = if (login.isEmpty()) {
+                "Введите email"
+            } else {
+                "Введите корректный email"
+            }
+            isValid = false
+        }
+
+        val usernameValidation = ValidationUtils.isValidUsername(username)
+        if (!usernameValidation.first) {
+            tilUsername.error = usernameValidation.second
+            isValid = false
+        }
+
+        val passwordValidation = ValidationUtils.validatePassword(password)
+        if (!passwordValidation.first) {
+            tilPassword.error = passwordValidation.second
+            isValid = false
+        }
+
+        if (confirmPassword.isEmpty()) {
+            tilConfirmPassword.error = "Подтвердите пароль"
+            isValid = false
+        } else if (!ValidationUtils.doPasswordsMatch(password, confirmPassword)) {
+            tilConfirmPassword.error = "Пароли не совпадают"
+            isValid = false
+        }
+
+        return isValid
     }
 
     private fun registerUser() {
