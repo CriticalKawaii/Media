@@ -8,14 +8,21 @@ class MediaApplication : Application() {
     companion object {
         lateinit var database: AppDatabase
             private set
+
+        lateinit var instance: MediaApplication
+            private set
     }
 
     override fun onCreate() {
         super.onCreate()
+        instance = this
+
         database = Room.databaseBuilder(
             applicationContext,
-            klass = AppDatabase::class.java,
-            name = "media-database"
-        ).build()
+            AppDatabase::class.java,
+            "media-database"
+        )
+            .fallbackToDestructiveMigration()
+            .build()
     }
 }

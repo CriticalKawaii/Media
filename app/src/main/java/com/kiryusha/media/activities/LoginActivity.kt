@@ -2,31 +2,44 @@ package com.kiryusha.media.activities
 
 import android.content.Intent
 import android.os.Bundle
-import android.widget.Button
-import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.checkbox.MaterialCheckBox
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 import com.kiryusha.media.MediaApplication
 import com.kiryusha.media.R
 import com.kiryusha.media.repository.UserRepository
+import com.kiryusha.media.utils.AppPreferences
 import com.kiryusha.media.utils.SecurityUtils
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import androidx.core.content.edit
-import com.google.android.material.button.MaterialButton
-import com.google.android.material.textfield.TextInputEditText
-import com.google.android.material.textfield.TextInputLayout
-import com.kiryusha.media.utils.ValidationUtils
 
 class LoginActivity : AppCompatActivity() {
     private lateinit var repository: UserRepository
+    private lateinit var appPreferences: AppPreferences
     private lateinit var etLogin: TextInputEditText
     private lateinit var etPassword: TextInputEditText
     private lateinit var tilLogin: TextInputLayout
     private lateinit var tilPassword: TextInputLayout
+    private lateinit var cbRememberMe: MaterialCheckBox
 
-    override fun onCreate(savedInstanceState: Bundle?){
+    override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        appPreferences = AppPreferences(this)
+
+        // Check if already logged in
+        lifecycleScope.launch {
+            val isLoggedIn = appPreferences.isLoggedIn().first()
+            if (isLoggedIn) {
+                navigateToMain()
+                return@launch
+            }
+        }
+
         setContentView(R.layout.activity_login)
 
         repository = UserRepository(MediaApplication.database.userDao())
@@ -35,13 +48,15 @@ class LoginActivity : AppCompatActivity() {
         etPassword = findViewById(R.id.et_password)
         tilLogin = findViewById(R.id.til_login)
         tilPassword = findViewById(R.id.til_password)
-
+        cbRememberMe = findViewById(R.id.cb_remember_me)
 
         val loginButton = findViewById<MaterialButton>(R.id.btn_login)
-        val registerLink = findViewById<TextView>(R.id.tv_register)
+        val registerLink = findViewById<android.widget.TextView>(R.id.tv_register)
 
         loginButton.setOnClickListener {
-            if (validateInput()) {loginUser()}
+            if (validateInput()) {
+                loginUser()
+            }
         }
 
         registerLink.setOnClickListener {
@@ -49,7 +64,7 @@ class LoginActivity : AppCompatActivity() {
         }
     }
 
-    private fun validateInput(): Boolean{
+    private fun validateInput(): Boolean {
         var isValid = true
 
         val login = etLogin.text.toString().trim()
@@ -58,12 +73,12 @@ class LoginActivity : AppCompatActivity() {
         tilLogin.error = null
         tilPassword.error = null
 
-        if(login.isEmpty()){
+        if (login.isEmpty()) {
             tilLogin.error = "Введите логин"
             isValid = false
         }
 
-        if(password.isEmpty()){
+        if (password.isEmpty()) {
             tilPassword.error = "Введите пароль"
             isValid = false
         }
@@ -74,31 +89,43 @@ class LoginActivity : AppCompatActivity() {
     private fun loginUser() {
         val login = etLogin.text.toString().trim()
         val password = etPassword.text.toString()
+        val rememberMe = cbRememberMe.isChecked
 
-        lifecycleScope.launch{
-            try{
+        lifecycleScope.launch {
+            try {
                 val hashedPassword = SecurityUtils.hashPassword(password)
                 val user = repository.loginUser(login, hashedPassword)
 
-                if(user != null) {
-                    saveUserSession(user.uid)
+                if (user != null) {
+                    // Save session with DataStore
+                    appPreferences.saveUserSession(user.uid, rememberMe)
 
-                    startActivity(Intent(this@LoginActivity, MainActivity::class.java))
-                    finish()
-                }else{
-                    Toast.makeText(this@LoginActivity, "Неверный логин или пароль", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        this@LoginActivity,
+                        "Вход выполнен успешно",
+                        Toast.LENGTH_SHORT
+                    ).show()
+
+                    navigateToMain()
+                } else {
+                    Toast.makeText(
+                        this@LoginActivity,
+                        "Неверный логин или пароль",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
-            } catch (e: Exception){
-                Toast.makeText(this@LoginActivity, "Ошибка входа: ${e.message}", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                Toast.makeText(
+                    this@LoginActivity,
+                    "Ошибка входа: ${e.message}",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }
 
-    private fun saveUserSession(userId: Int) {
-        getSharedPreferences("user_prefs", MODE_PRIVATE)
-            .edit {
-                putInt("user_id", userId)
-                    .putBoolean("is_logged_in", true)
-            }
+    private fun navigateToMain() {
+        startActivity(Intent(this@LoginActivity, MainActivity::class.java))
+        finish()
     }
 }

@@ -134,6 +134,43 @@
 
                 </com.google.android.material.textfield.TextInputLayout>
 
+                <!--Privacy Policy Checkbox-->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="16dp"
+                    android:gravity="start|center_vertical">
+
+                    <com.google.android.material.checkbox.MaterialCheckBox
+                        android:id="@+id/cb_privacy_policy"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:minWidth="0dp"
+                        android:minHeight="0dp"/>
+
+                    <TextView
+                        android:id="@+id/tv_privacy_policy"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="8dp"
+                        android:text="Я согласен на обработку персональных данных в соответствии с ФЗ-152"
+                        android:textSize="13sp"
+                        android:linksClickable="true"/>
+
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tv_privacy_error"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="40dp"
+                    android:layout_marginTop="4dp"
+                    android:textColor="@android:color/holo_red_dark"
+                    android:textSize="12sp"
+                    android:visibility="gone"/>
+
                 <!--Register button-->
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_register"

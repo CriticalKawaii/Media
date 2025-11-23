@@ -1,4 +1,4 @@
-package com.kiryusha.media.database.daos
+package com.kiryusha.media.database.dao
 
 import androidx.room.Dao
 import androidx.room.Delete

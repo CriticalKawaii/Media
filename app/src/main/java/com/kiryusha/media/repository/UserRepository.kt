@@ -1,7 +1,7 @@
 package com.kiryusha.media.repository
 
 import android.util.Log
-import com.kiryusha.media.database.daos.UserDao
+import com.kiryusha.media.database.dao.UserDao
 import com.kiryusha.media.database.entities.User
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
