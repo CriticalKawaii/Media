@@ -5,7 +5,7 @@ import androidx.room.RoomDatabase
 import com.kiryusha.media.database.daos.UserDao
 import com.kiryusha.media.database.entities.User
 
-@Database(entities = [User::class], version = 1)
+@Database(entities = [User::class], version = 2)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun userDao(): UserDao
 }

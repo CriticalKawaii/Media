@@ -2,10 +2,13 @@ package com.kiryusha.media.database.entities
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
-import java.util.Date
 
-@Entity
+@Entity(
+    tableName = "user",
+    indices = [Index(value = ["login"], unique = true)]
+)
 data class User(
     @PrimaryKey(autoGenerate = true) val uid: Int = 0,
     @ColumnInfo(name = "login") val login: String,

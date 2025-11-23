@@ -36,6 +36,7 @@ class LoginActivity : AppCompatActivity() {
         tilLogin = findViewById(R.id.til_login)
         tilPassword = findViewById(R.id.til_password)
 
+
         val loginButton = findViewById<MaterialButton>(R.id.btn_login)
         val registerLink = findViewById<TextView>(R.id.tv_register)
 
