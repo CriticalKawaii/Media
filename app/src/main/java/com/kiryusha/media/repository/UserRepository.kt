@@ -53,4 +53,14 @@ class UserRepository(private val userDao: UserDao) {
             false
         }
     }
+
+    suspend fun getUserById(userId: Int): User? = withContext(Dispatchers.IO) {
+        try {
+            userDao.getUserById(userId)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error getting user by ID: ${e.message}", e)
+            null
+        }
+    }
+
 }

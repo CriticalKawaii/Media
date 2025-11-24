@@ -1,7 +1,6 @@
 package com.kiryusha.media.ui.screens.profile
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -13,17 +12,28 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
+import com.kiryusha.media.viewmodels.ProfileViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
+    viewModel: ProfileViewModel,
+    userId: Int,
     onLogout: () -> Unit
 ) {
+    val currentUser by viewModel.currentUser.collectAsState()
+    val userStats by viewModel.userStats.collectAsState()
+    val playlistCount by viewModel.playlistCount.collectAsState()
+
     var showLogoutDialog by remember { mutableStateOf(false) }
     var darkTheme by remember { mutableStateOf(false) }
+
+    LaunchedEffect(userId) {
+        viewModel.loadUserProfile(userId)
+    }
 
     Scaffold(
         topBar = {
@@ -41,17 +51,17 @@ fun ProfileScreen(
         ) {
             // Profile Header
             ProfileHeader(
-                username = "User", // Get from ViewModel
-                email = "user@example.com" // Get from ViewModel
+                username = currentUser?.userName ?: "User",
+                email = currentUser?.login ?: "user@example.com"
             )
 
             Spacer(modifier = Modifier.height(24.dp))
 
             // Statistics Card
             StatsCard(
-                totalTracks = 150, // Get from ViewModel
-                totalPlaylists = 12, // Get from ViewModel
-                totalPlaytime = "24h 35m" // Get from ViewModel
+                totalTracks = userStats?.totalTracks ?: 0,
+                totalPlaylists = playlistCount,
+                totalPlaytime = viewModel.formatPlaytime(userStats?.totalPlays ?: 0)
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -253,7 +263,7 @@ fun StatItem(
 
 @Composable
 fun SettingsItem(
-    icon: ImageVector,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
     title: String,
     subtitle: String? = null,
     trailing: @Composable (() -> Unit)? = null,
@@ -283,8 +293,9 @@ fun Modifier.clickableWithoutRipple(onClick: () -> Unit): Modifier {
     return this.then(
         Modifier.clickable(
             indication = null,
-            interactionSource = remember { MutableInteractionSource() },
+            interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
             onClick = onClick
         )
     )
 }
+

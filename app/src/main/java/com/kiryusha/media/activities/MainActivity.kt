@@ -11,9 +11,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.core.content.edit
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -25,21 +27,38 @@ import com.kiryusha.media.navigation.AppNavigation
 import com.kiryusha.media.navigation.Screen
 import com.kiryusha.media.repository.MusicRepository
 import com.kiryusha.media.repository.PlaylistRepository
+import com.kiryusha.media.repository.UserRepository
 import com.kiryusha.media.ui.theme.MediaTheme
+import com.kiryusha.media.utils.AppPreferences
 import com.kiryusha.media.utils.MediaScanner
+import com.kiryusha.media.utils.MusicPlayerController
 import com.kiryusha.media.viewmodels.LibraryViewModel
 import com.kiryusha.media.viewmodels.PlayerViewModel
 import com.kiryusha.media.viewmodels.PlaylistViewModel
+import com.kiryusha.media.viewmodels.ProfileViewModel
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
     private lateinit var libraryViewModel: LibraryViewModel
     private lateinit var playerViewModel: PlayerViewModel
     private lateinit var playlistViewModel: PlaylistViewModel
+    private lateinit var profileViewModel: ProfileViewModel
+    private lateinit var appPreferences: AppPreferences
+    private lateinit var musicPlayerController: MusicPlayerController
+    private var currentUserId: Int = -1
 
     @OptIn(ExperimentalPermissionsApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Initialize AppPreferences
+        appPreferences = AppPreferences(this)
+
+        // Initialize MusicPlayerController
+        musicPlayerController = MusicPlayerController(this)
+        musicPlayerController.bindService()
 
         // Initialize ViewModels
         val database = MediaApplication.database
@@ -48,17 +67,22 @@ class MainActivity : ComponentActivity() {
             database.playbackHistoryDao()
         )
         val playlistRepository = PlaylistRepository(database.playlistDao())
+        val userRepository = UserRepository(database.userDao())
         val mediaScanner = MediaScanner(this)
 
         libraryViewModel = LibraryViewModel(musicRepository, mediaScanner)
-        playerViewModel = PlayerViewModel(musicRepository)
+        playerViewModel = PlayerViewModel(musicRepository, musicPlayerController)
         playlistViewModel = PlaylistViewModel(playlistRepository)
+        profileViewModel = ProfileViewModel(userRepository, musicRepository, playlistRepository)
 
-        // Get user ID from SharedPreferences
-        val userId = getUserId()
-        if (userId != -1) {
-            playerViewModel.setUserId(userId)
-            playlistViewModel.setUserId(userId)
+        // Get user ID from preferences
+        lifecycleScope.launch {
+            val userId = appPreferences.getUserId().first() ?: -1
+            currentUserId = userId
+            if (userId != -1) {
+                playerViewModel.setUserId(userId)
+                playlistViewModel.setUserId(userId)
+            }
         }
 
         setContent {
@@ -80,7 +104,8 @@ class MainActivity : ComponentActivity() {
                         libraryViewModel = libraryViewModel,
                         playerViewModel = playerViewModel,
                         playlistViewModel = playlistViewModel,
-                        onLogout = { handleLogout() }
+                        onLogout = { handleLogout() },
+                        profileViewModel = profileViewModel
                     )
                 } else {
                     PermissionRequiredScreen(
@@ -93,17 +118,18 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun getUserId(): Int {
-        return getSharedPreferences("user_prefs", MODE_PRIVATE)
-            .getInt("user_id", -1)
+    private fun handleLogout() {
+        lifecycleScope.launch {
+            appPreferences.clearSession()
+            musicPlayerController.release()
+            startActivity(Intent(this@MainActivity, LoginActivity::class.java))
+            finish()
+        }
     }
 
-    private fun handleLogout() {
-        getSharedPreferences("user_prefs", MODE_PRIVATE).edit {
-            clear()
-        }
-        startActivity(Intent(this, LoginActivity::class.java))
-        finish()
+    override fun onDestroy() {
+        super.onDestroy()
+        musicPlayerController.unbindService()
     }
 }
 
@@ -112,6 +138,8 @@ fun MainScreen(
     libraryViewModel: LibraryViewModel,
     playerViewModel: PlayerViewModel,
     playlistViewModel: PlaylistViewModel,
+    profileViewModel: ProfileViewModel,
+
     onLogout: () -> Unit
 ) {
     val navController = rememberNavController()
@@ -151,7 +179,13 @@ fun MainScreen(
         Box(modifier = Modifier.padding(paddingValues)) {
             AppNavigation(
                 navController = navController,
-                startDestination = Screen.Library.route
+                startDestination = Screen.Library.route,
+                libraryViewModel = libraryViewModel,
+                playerViewModel = playerViewModel,
+                playlistViewModel = playlistViewModel,
+                profileViewModel = profileViewModel,
+                userId = hashCode(),
+                onLogout = onLogout
             )
         }
     }
@@ -168,7 +202,7 @@ fun PermissionRequiredScreen(onRequestPermission: () -> Unit) {
                 .fillMaxSize()
                 .padding(32.dp),
             verticalArrangement = Arrangement.Center,
-            horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Icon(
                 imageVector = Icons.Filled.Info,
@@ -189,7 +223,7 @@ fun PermissionRequiredScreen(onRequestPermission: () -> Unit) {
             Text(
                 text = "This app needs access to your media files to play music.",
                 style = MaterialTheme.typography.bodyMedium,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                textAlign = TextAlign.Center
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -200,3 +234,5 @@ fun PermissionRequiredScreen(onRequestPermission: () -> Unit) {
         }
     }
 }
+
+

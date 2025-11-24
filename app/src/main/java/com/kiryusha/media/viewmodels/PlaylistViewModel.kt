@@ -20,8 +20,10 @@ class PlaylistViewModel(
 
     private var currentUserId: Int = -1
 
+    private val _userIdFlow = MutableStateFlow(-1)
+
     val userPlaylists: StateFlow<List<PlaylistWithTracks>> =
-        MutableStateFlow<Int>(-1)
+        _userIdFlow
             .flatMapLatest { userId ->
                 if (userId == -1) {
                     flowOf(emptyList())
@@ -37,16 +39,7 @@ class PlaylistViewModel(
 
     fun setUserId(userId: Int) {
         currentUserId = userId
-        loadUserPlaylists(userId)
-    }
-
-    private fun loadUserPlaylists(userId: Int) {
-        viewModelScope.launch {
-            playlistRepository.getUserPlaylistsWithTracks(userId)
-                .collect { playlists ->
-                    // Collected in userPlaylists StateFlow
-                }
-        }
+        _userIdFlow.value = userId
     }
 
     fun createPlaylist(name: String, description: String? = null) {

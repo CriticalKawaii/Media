@@ -4,13 +4,18 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kiryusha.media.database.entities.Track
 import com.kiryusha.media.repository.MusicRepository
+import com.kiryusha.media.utils.MusicPlayerController
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 class PlayerViewModel(
-    private val musicRepository: MusicRepository
+    private val musicRepository: MusicRepository,
+    private val playerController: MusicPlayerController
 ) : ViewModel() {
 
     private val _currentTrack = MutableStateFlow<Track?>(null)
@@ -41,6 +46,21 @@ class PlayerViewModel(
     val playerState: StateFlow<PlayerState> = _playerState.asStateFlow()
 
     private var userId: Int = -1
+    private var progressUpdateJob: Job? = null
+
+    init {
+        // Observe player state from controller
+        viewModelScope.launch {
+            playerController.isPlaying.collect { playing ->
+                _isPlaying.value = playing
+                if (playing) {
+                    startProgressUpdate()
+                } else {
+                    stopProgressUpdate()
+                }
+            }
+        }
+    }
 
     fun setUserId(id: Int) {
         userId = id
@@ -49,10 +69,12 @@ class PlayerViewModel(
     fun playTrack(track: Track) {
         viewModelScope.launch {
             _currentTrack.value = track
-            _isPlaying.value = true
             _progress.value = 0f
             _currentPosition.value = 0L
             _playerState.value = PlayerState.Playing
+
+            // Play through controller
+            playerController.playTrack(track)
 
             // Record play in history
             if (userId != -1) {
@@ -64,17 +86,20 @@ class PlayerViewModel(
     fun setPlaylist(tracks: List<Track>, startIndex: Int = 0) {
         _playlist.value = tracks
         _currentIndex.value = startIndex
+
+        // Set playlist in player controller
+        playerController.setPlaylist(tracks, startIndex)
+
         if (tracks.isNotEmpty() && startIndex < tracks.size) {
-            playTrack(tracks[startIndex])
+            _currentTrack.value = tracks[startIndex]
         }
     }
 
     fun togglePlayPause() {
-        _isPlaying.value = !_isPlaying.value
-        _playerState.value = if (_isPlaying.value) {
-            PlayerState.Playing
+        if (_isPlaying.value) {
+            playerController.pause()
         } else {
-            PlayerState.Paused
+            playerController.play()
         }
     }
 
@@ -118,13 +143,7 @@ class PlayerViewModel(
     }
 
     fun seekTo(position: Long) {
-        _currentPosition.value = position
-        _currentTrack.value?.let { track ->
-            _progress.value = position.toFloat() / track.durationMs.toFloat()
-        }
-    }
-
-    fun updateProgress(position: Long) {
+        playerController.seekTo(position)
         _currentPosition.value = position
         _currentTrack.value?.let { track ->
             _progress.value = position.toFloat() / track.durationMs.toFloat()
@@ -143,32 +162,29 @@ class PlayerViewModel(
         }
     }
 
-    fun onTrackCompleted() {
-        when (_repeatMode.value) {
-            RepeatMode.ONE -> {
-                // Replay current track
-                playTrack(_currentTrack.value ?: return)
-            }
-            RepeatMode.ALL, RepeatMode.OFF -> {
-                skipNext()
+    private fun startProgressUpdate() {
+        progressUpdateJob?.cancel()
+        progressUpdateJob = viewModelScope.launch {
+            while (isActive) {
+                val position = playerController.getCurrentPosition()
+                _currentPosition.value = position
+
+                _currentTrack.value?.let { track ->
+                    _progress.value = position.toFloat() / track.durationMs.toFloat()
+                }
+
+                delay(100) // Update every 100ms
             }
         }
     }
 
-    fun pause() {
-        _isPlaying.value = false
-        _playerState.value = PlayerState.Paused
+    private fun stopProgressUpdate() {
+        progressUpdateJob?.cancel()
     }
 
-    fun resume() {
-        _isPlaying.value = true
-        _playerState.value = PlayerState.Playing
-    }
-
-    fun stop() {
-        _isPlaying.value = false
-        _progress.value = 0f
-        _currentPosition.value = 0L
-        _playerState.value = PlayerState.Stopped
+    override fun onCleared() {
+        super.onCleared()
+        stopProgressUpdate()
     }
 }
+

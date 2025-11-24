@@ -24,6 +24,7 @@ import com.kiryusha.media.database.entities.Track
 import com.kiryusha.media.viewmodels.LibraryUiState
 import com.kiryusha.media.viewmodels.LibraryViewModel
 import com.kiryusha.media.viewmodels.ViewMode
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,6 +41,7 @@ fun LibraryScreen(
     val searchResults by viewModel.searchResults.collectAsState()
 
     var showSearchBar by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
