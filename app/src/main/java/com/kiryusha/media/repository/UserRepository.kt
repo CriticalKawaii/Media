@@ -25,30 +25,31 @@ class UserRepository(private val userDao: UserDao) {
         }
     }
 
-    suspend fun loginUser(login: String, password: String) : User? = withContext(Dispatchers.IO){
+    suspend fun loginUser(login: String, password: String): User? = withContext(Dispatchers.IO) {
         try {
             Log.d(TAG, "Attempting to login user: $login")
             val user = userDao.findByLogin(login)
-            if (user.password == password) {
+            if (user != null && user.password == password) {
                 Log.d(TAG, "Login successful for: $login")
                 user
             } else {
-                Log.d(TAG, "Login failed - incorrect password for: $login")
+                Log.d(TAG, "Login failed - incorrect credentials for: $login")
                 null
             }
-        } catch (e: Exception){
+        } catch (e: Exception) {
             Log.e(TAG, "Error during login: ${e.message}", e)
             null
         }
     }
 
-    suspend fun isLoginTaken(login: String): Boolean = withContext(Dispatchers.IO){
+    suspend fun isLoginTaken(login: String): Boolean = withContext(Dispatchers.IO) {
         try {
             Log.d(TAG, "Checking if login exists: $login")
-            userDao.findByLogin(login)
-            Log.d(TAG, "Login exists: $login")
-            true
-        } catch (e: Exception){
+            val user = userDao.findByLogin(login)
+            val exists = user != null
+            Log.d(TAG, "Login exists: $exists")
+            exists
+        } catch (e: Exception) {
             Log.d(TAG, "Login does not exist: $login")
             false
         }

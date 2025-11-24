@@ -18,10 +18,10 @@ interface UserDao {
     suspend fun loadAllByIds(userIds: IntArray): List<User>
 
     @Query("SELECT * FROM user WHERE login = :login LIMIT 1")
-    suspend fun findByLogin(login: String): User
+    suspend fun findByLogin(login: String): User?
 
     @Query("SELECT * FROM user WHERE user_name LIKE :userName LIMIT 1")
-    suspend fun findByUserName(userName: String): User
+    suspend fun findByUserName(userName: String): User?
 
     @Insert
     suspend fun insertAll(vararg users: User)

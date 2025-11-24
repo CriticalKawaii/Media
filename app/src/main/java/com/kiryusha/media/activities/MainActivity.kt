@@ -180,12 +180,6 @@ fun MainScreen(
             AppNavigation(
                 navController = navController,
                 startDestination = Screen.Library.route,
-                libraryViewModel = libraryViewModel,
-                playerViewModel = playerViewModel,
-                playlistViewModel = playlistViewModel,
-                profileViewModel = profileViewModel,
-                userId = hashCode(),
-                onLogout = onLogout
             )
         }
     }
