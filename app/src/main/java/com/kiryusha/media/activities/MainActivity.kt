@@ -47,20 +47,16 @@ class MainActivity : ComponentActivity() {
     private lateinit var profileViewModel: ProfileViewModel
     private lateinit var appPreferences: AppPreferences
     private lateinit var musicPlayerController: MusicPlayerController
-    private var currentUserId: Int = -1
 
     @OptIn(ExperimentalPermissionsApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Initialize AppPreferences
         appPreferences = AppPreferences(this)
 
-        // Initialize MusicPlayerController
         musicPlayerController = MusicPlayerController(this)
         musicPlayerController.bindService()
 
-        // Initialize ViewModels
         val database = MediaApplication.database
         val musicRepository = MusicRepository(
             database.trackDao(),
@@ -75,17 +71,19 @@ class MainActivity : ComponentActivity() {
         playlistViewModel = PlaylistViewModel(playlistRepository)
         profileViewModel = ProfileViewModel(userRepository, musicRepository, playlistRepository)
 
-        // Get user ID from preferences
-        lifecycleScope.launch {
-            val userId = appPreferences.getUserId().first() ?: -1
-            currentUserId = userId
-            if (userId != -1) {
-                playerViewModel.setUserId(userId)
-                playlistViewModel.setUserId(userId)
-            }
-        }
-
         setContent {
+            var currentUserId by remember { mutableStateOf(-1) }
+
+            LaunchedEffect(Unit) {
+                val userId = appPreferences.getUserId().first() ?: -1
+                currentUserId = userId
+                if (userId != -1) {
+                    playerViewModel.setUserId(userId)
+                    playlistViewModel.setUserId(userId)
+                    profileViewModel.loadUserProfile(userId)
+                }
+            }
+
             MediaTheme {
                 val permissionState = rememberMultiplePermissionsState(
                     permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -104,8 +102,9 @@ class MainActivity : ComponentActivity() {
                         libraryViewModel = libraryViewModel,
                         playerViewModel = playerViewModel,
                         playlistViewModel = playlistViewModel,
-                        onLogout = { handleLogout() },
-                        profileViewModel = profileViewModel
+                        profileViewModel = profileViewModel,
+                        userId = currentUserId,
+                        onLogout = { handleLogout() }
                     )
                 } else {
                     PermissionRequiredScreen(
@@ -139,7 +138,7 @@ fun MainScreen(
     playerViewModel: PlayerViewModel,
     playlistViewModel: PlaylistViewModel,
     profileViewModel: ProfileViewModel,
-
+    userId: Int,
     onLogout: () -> Unit
 ) {
     val navController = rememberNavController()
@@ -179,7 +178,13 @@ fun MainScreen(
         Box(modifier = Modifier.padding(paddingValues)) {
             AppNavigation(
                 navController = navController,
-                startDestination = Screen.Library.route,
+                libraryViewModel = libraryViewModel,
+                playerViewModel = playerViewModel,
+                playlistViewModel = playlistViewModel,
+                profileViewModel = profileViewModel,
+                userId = userId,
+                onLogout = onLogout,
+                startDestination = Screen.Library.route
             )
         }
     }

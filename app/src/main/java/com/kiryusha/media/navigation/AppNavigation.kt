@@ -49,14 +49,19 @@ fun AppNavigation(
                     navController.navigate(Screen.Player.route)
                 },
                 onAlbumClick = { album ->
-                    // Handle album click - play album tracks
+                    playerViewModel.setPlaylist(
+                        album.tracks.ifEmpty {
+                            emptyList()
+                        },
+                        0
+                    )
                     if (album.tracks.isNotEmpty()) {
-                        playerViewModel.setPlaylist(album.tracks, 0)
                         navController.navigate(Screen.Player.route)
                     }
                 }
             )
         }
+
 
         composable(Screen.Player.route) {
             PlayerScreen(

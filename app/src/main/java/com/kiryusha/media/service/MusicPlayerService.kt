@@ -42,18 +42,14 @@ class MusicPlayerService : MediaSessionService() {
     override fun onCreate() {
         super.onCreate()
 
-        // Initialize ExoPlayer
         player = ExoPlayer.Builder(this).build()
 
-        // Initialize MediaSession
         mediaSession = MediaSession.Builder(this, player)
             .build()
 
-        // Setup notification channel
         notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         createNotificationChannel()
 
-        // Add player listener
         player.addListener(object : Player.Listener {
             override fun onIsPlayingChanged(isPlaying: Boolean) {
                 if (isPlaying) {
@@ -66,7 +62,16 @@ class MusicPlayerService : MediaSessionService() {
                     Player.STATE_READY -> {
                         notificationManager.notify(NOTIFICATION_ID, createNotification())
                     }
+                    Player.STATE_ENDED -> {
+                        if (player.hasNextMediaItem()) {
+                            player.seekToNextMediaItem()
+                        }
+                    }
                 }
+            }
+
+            override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                notificationManager.notify(NOTIFICATION_ID, createNotification())
             }
         })
     }
@@ -112,14 +117,20 @@ class MusicPlayerService : MediaSessionService() {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
+        val currentItem = player.currentMediaItem
+        val title = currentItem?.mediaMetadata?.title?.toString() ?: "Music Player"
+        val artist = currentItem?.mediaMetadata?.artist?.toString() ?: ""
+
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle(player.currentMediaItem?.mediaMetadata?.title ?: "Music Player")
-            .setContentText(player.currentMediaItem?.mediaMetadata?.artist ?: "")
+            .setContentTitle(title)
+            .setContentText(artist)
             .setSmallIcon(R.drawable.ic_music_note)
             .setContentIntent(pendingIntent)
             .setOnlyAlertOnce(true)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setOngoing(true)  // ✅ Make notification persistent while playing
             .build()
     }
+
 }

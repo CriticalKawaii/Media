@@ -73,15 +73,21 @@ class MusicPlayerController(private val context: Context) {
     }
 
     fun playTrack(track: Track) {
-        val mediaItem = MediaItem.Builder()
-            .setUri(track.filePath)
-            .setMediaId(track.trackId.toString())
-            .build()
+        exoPlayer?.let { player ->
+            try {
+                val mediaItem = MediaItem.Builder()
+                    .setUri(track.filePath.toUri())
+                    .setMediaId(track.trackId.toString())
+                    .build()
 
-        exoPlayer?.apply {
-            setMediaItem(mediaItem)
-            prepare()
-            play()
+                player.apply {
+                    setMediaItem(mediaItem)
+                    prepare()
+                    play()
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 
@@ -118,17 +124,23 @@ class MusicPlayerController(private val context: Context) {
     }
 
     fun setPlaylist(tracks: List<Track>, startIndex: Int) {
-        val mediaItems = tracks.map { track ->
-            MediaItem.Builder()
-                .setUri(track.filePath)
-                .setMediaId(track.trackId.toString())
-                .build()
-        }
+        exoPlayer?.let { player ->
+            try {
+                val mediaItems = tracks.map { track ->
+                    MediaItem.Builder()
+                        .setUri(track.filePath.toUri())
+                        .setMediaId(track.trackId.toString())
+                        .build()
+                }
 
-        exoPlayer?.apply {
-            setMediaItems(mediaItems, startIndex, 0)
-            prepare()
-            play()
+                player.apply {
+                    setMediaItems(mediaItems, startIndex, 0)
+                    prepare()
+                    play()
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 

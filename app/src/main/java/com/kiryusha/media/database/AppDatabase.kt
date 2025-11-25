@@ -17,7 +17,7 @@ import com.kiryusha.media.database.entities.*
         PlaylistTrackCrossRef::class,
         PlaybackHistory::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 @TypeConverters(Converters::class)

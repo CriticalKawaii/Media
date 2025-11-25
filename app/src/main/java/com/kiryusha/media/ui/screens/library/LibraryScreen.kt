@@ -17,6 +17,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.kiryusha.media.database.entities.Album
@@ -75,10 +76,19 @@ fun LibraryScreen(
                 .padding(paddingValues)
         ) {
             when (uiState) {
-                is LibraryUiState.Loading, is LibraryUiState.Scanning -> {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.Center)
-                    )
+                is LibraryUiState.Loading -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                }
+                is LibraryUiState.Scanning -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            CircularProgressIndicator()
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text("Scanning for music files...")
+                        }
+                    }
                 }
                 is LibraryUiState.Empty -> {
                     EmptyLibraryView(
@@ -102,7 +112,14 @@ fun LibraryScreen(
                             ViewMode.ALBUMS -> {
                                 AlbumGridView(
                                     albums = albums,
-                                    onAlbumClick = onAlbumClick
+                                    onAlbumClick = { album ->
+                                        viewModel.viewModelScope.launch {
+                                            val fullAlbum = viewModel.musicRepository.getAlbumWithTracks(album.name)
+                                            if (fullAlbum != null) {
+                                                onAlbumClick(fullAlbum)
+                                            }
+                                        }
+                                    }
                                 )
                             }
                             ViewMode.TRACKS -> {

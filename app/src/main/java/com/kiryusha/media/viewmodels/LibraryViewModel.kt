@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class LibraryViewModel(
-    private val musicRepository: MusicRepository,
+    val musicRepository: MusicRepository,
     private val mediaScanner: MediaScanner
 ) : ViewModel() {
 
@@ -65,11 +65,15 @@ class LibraryViewModel(
             _uiState.value = LibraryUiState.Scanning
             try {
                 val tracks = mediaScanner.scanAudioFiles()
-                musicRepository.importTracks(tracks)
-                _uiState.value = LibraryUiState.Success("Найдено ${tracks.size} треков")
-                loadAlbums()
+                if (tracks.isEmpty()) {
+                    _uiState.value = LibraryUiState.Empty
+                } else {
+                    musicRepository.importTracks(tracks)
+                    _uiState.value = LibraryUiState.Success("Found ${tracks.size} tracks")
+                    loadAlbums()
+                }
             } catch (e: Exception) {
-                _uiState.value = LibraryUiState.Error("Ошибка сканирования: ${e.message}")
+                _uiState.value = LibraryUiState.Error("Scanning failed: ${e.message}")
             }
         }
     }
@@ -106,8 +110,14 @@ class LibraryViewModel(
         _searchQuery.value = query
     }
 
-    fun setViewMode(mode: ViewMode) {
-        _viewMode.value = mode
+    fun loadAlbumTracks(albumName: String) {
+        viewModelScope.launch {
+            try {
+                val album = musicRepository.getAlbumWithTracks(albumName)
+            } catch (e: Exception) {
+                _uiState.value = LibraryUiState.Error("Failed to load album")
+            }
+        }
     }
 
     fun toggleFavorite(trackId: Long, isFavorite: Boolean) {

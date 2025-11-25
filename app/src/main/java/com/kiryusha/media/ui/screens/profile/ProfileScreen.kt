@@ -1,6 +1,7 @@
 package com.kiryusha.media.ui.screens.profile
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -290,12 +291,10 @@ fun SettingsItem(
 
 @Composable
 fun Modifier.clickableWithoutRipple(onClick: () -> Unit): Modifier {
-    return this.then(
-        Modifier.clickable(
-            indication = null,
-            interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
-            onClick = onClick
-        )
+    return this.clickable(
+        indication = null,
+        interactionSource = remember { MutableInteractionSource() },
+        onClick = onClick
     )
 }
 

@@ -30,20 +30,18 @@ class ProfileViewModel(
     fun loadUserProfile(userId: Int) {
         viewModelScope.launch {
             try {
-                // Load user data
                 val user = userRepository.getUserById(userId)
                 _currentUser.value = user
 
-                // Load stats
                 val stats = musicRepository.getUserStats(userId)
                 _userStats.value = stats
-
-                // Load playlist count
-                playlistRepository.getUserPlaylists(userId).collect { playlists ->
-                    _playlistCount.value = playlists.size
-                }
             } catch (e: Exception) {
-                // Handle error
+            }
+        }
+
+        viewModelScope.launch {
+            playlistRepository.getUserPlaylists(userId).collect { playlists ->
+                _playlistCount.value = playlists.size
             }
         }
     }

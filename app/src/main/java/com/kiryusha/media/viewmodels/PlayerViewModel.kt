@@ -109,7 +109,14 @@ class PlayerViewModel(
             if (currentPlaylist.isEmpty()) return@launch
 
             val nextIndex = when {
-                _shuffleEnabled.value -> (0 until currentPlaylist.size).random()
+                _shuffleEnabled.value -> {
+                    val availableIndices = currentPlaylist.indices.filter { it != _currentIndex.value }
+                    if (availableIndices.isEmpty()) {
+                        currentPlaylist.indices.random()
+                    } else {
+                        availableIndices.random()
+                    }
+                }
                 _currentIndex.value < currentPlaylist.size - 1 -> _currentIndex.value + 1
                 _repeatMode.value == RepeatMode.ALL -> 0
                 else -> return@launch
@@ -119,6 +126,7 @@ class PlayerViewModel(
             playTrack(currentPlaylist[nextIndex])
         }
     }
+
 
     fun skipPrevious() {
         viewModelScope.launch {
@@ -162,18 +170,44 @@ class PlayerViewModel(
         }
     }
 
+    private fun setupPlayerListener() {
+        viewModelScope.launch {
+            playerController.isPlaying.collect { playing ->
+                _isPlaying.value = playing
+                if (playing) {
+                    startProgressUpdate()
+                } else {
+                    stopProgressUpdate()
+                }
+            }
+        }
+    }
+
     private fun startProgressUpdate() {
         progressUpdateJob?.cancel()
         progressUpdateJob = viewModelScope.launch {
             while (isActive) {
                 val position = playerController.getCurrentPosition()
+                val duration = playerController.getDuration()
+
                 _currentPosition.value = position
 
                 _currentTrack.value?.let { track ->
-                    _progress.value = position.toFloat() / track.durationMs.toFloat()
+                    _progress.value = if (track.durationMs > 0) {
+                        position.toFloat() / track.durationMs.toFloat()
+                    } else {
+                        0f
+                    }
+
+                    if (position >= track.durationMs - 500 && track.durationMs > 0) {
+                        when (_repeatMode.value) {
+                            RepeatMode.ONE -> seekTo(0L)
+                            else -> skipNext()
+                        }
+                    }
                 }
 
-                delay(100) // Update every 100ms
+                delay(100)
             }
         }
     }

@@ -74,7 +74,6 @@ fun PlayerScreen(
                         .padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Album Art
                     AnimatedAlbumArt(
                         albumArtUri = track.albumArtUri,
                         isPlaying = isPlaying
@@ -82,7 +81,6 @@ fun PlayerScreen(
 
                     Spacer(modifier = Modifier.height(32.dp))
 
-                    // Track Info
                     TrackInfo(
                         title = track.title,
                         artist = track.artist
@@ -90,7 +88,6 @@ fun PlayerScreen(
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // Progress Bar
                     ProgressBar(
                         progress = progress,
                         currentPosition = currentPosition,
@@ -102,7 +99,6 @@ fun PlayerScreen(
 
                     Spacer(modifier = Modifier.height(32.dp))
 
-                    // Playback Controls
                     PlaybackControls(
                         isPlaying = isPlaying,
                         shuffleEnabled = shuffleEnabled,
@@ -223,10 +219,12 @@ fun ProgressBar(
 ) {
     Column {
         Slider(
-            value = progress,
+            value = progress.coerceIn(0f, 1f),
             onValueChange = { newProgress ->
-                val newPosition = (duration * newProgress).toLong()
-                onSeek(newPosition)
+                if (duration > 0) {
+                    val newPosition = (duration * newProgress).toLong()
+                    onSeek(newPosition)
+                }
             },
             modifier = Modifier.fillMaxWidth()
         )

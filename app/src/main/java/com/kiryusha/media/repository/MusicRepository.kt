@@ -31,28 +31,29 @@ class MusicRepository(
     suspend fun getAllAlbums(): List<Album> = withContext(Dispatchers.IO) {
         val albumInfos = trackDao.getAllAlbums()
         albumInfos.map { info ->
-            val tracks = trackDao.getTracksByAlbum(info.album)
             Album(
                 name = info.album,
                 artist = info.artist,
                 coverUri = info.album_art_uri,
-                tracks = emptyList() // Will be populated when needed
+                tracks = emptyList()
             )
         }
     }
 
     suspend fun getAlbumWithTracks(albumName: String): Album? = withContext(Dispatchers.IO) {
-        val tracks = trackDao.getTracksByAlbum(albumName)
-        val trackList = mutableListOf<Track>()
-        tracks.collect { trackList.addAll(it) }
+        val tracksList = mutableListOf<Track>()
+        trackDao.getTracksByAlbum(albumName).collect { tracks ->
+            tracksList.clear()
+            tracksList.addAll(tracks)
+        }
 
-        if (trackList.isEmpty()) return@withContext null
+        if (tracksList.isEmpty()) return@withContext null
 
         Album(
             name = albumName,
-            artist = trackList.first().artist,
-            coverUri = trackList.first().albumArtUri,
-            tracks = trackList
+            artist = tracksList.first().artist,
+            coverUri = tracksList.first().albumArtUri,
+            tracks = tracksList
         )
     }
 

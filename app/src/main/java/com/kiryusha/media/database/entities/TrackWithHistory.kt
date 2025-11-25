@@ -7,7 +7,7 @@ data class TrackWithHistory(
     @Embedded val track: Track,
     @Relation(
         parentColumn = "trackId",
-        entityColumn = "track_id"
+        entityColumn = "trackId"
     )
     val history: List<PlaybackHistory>
 )
