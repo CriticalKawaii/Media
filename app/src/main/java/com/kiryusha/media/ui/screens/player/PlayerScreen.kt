@@ -246,6 +246,13 @@ fun PlayerScreen(
                         viewModel.playTrack(track)
                     }
                     showQueueDialog = false
+                },
+                onRemoveTrack = { index ->
+                    viewModel.removeFromQueue(index)
+                },
+                onClearQueue = {
+                    viewModel.clearQueue()
+                    showQueueDialog = false
                 }
             )
         }
@@ -507,8 +514,12 @@ fun QueueDialog(
     playlist: List<Track>,
     currentTrack: Track?,
     onDismiss: () -> Unit,
-    onTrackClick: (Track) -> Unit
+    onTrackClick: (Track) -> Unit,
+    onRemoveTrack: (Int) -> Unit,
+    onClearQueue: () -> Unit
 ) {
+    var showClearConfirmation by remember { mutableStateOf(false) }
+
     Dialog(onDismissRequest = onDismiss) {
         Card(
             modifier = Modifier
@@ -532,8 +543,15 @@ fun QueueDialog(
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
-                    IconButton(onClick = onDismiss) {
-                        Icon(Icons.Filled.Close, "Close")
+                    Row {
+                        if (playlist.isNotEmpty()) {
+                            IconButton(onClick = { showClearConfirmation = true }) {
+                                Icon(Icons.Filled.Delete, "Clear queue")
+                            }
+                        }
+                        IconButton(onClick = onDismiss) {
+                            Icon(Icons.Filled.Close, "Close")
+                        }
                     }
                 }
 
@@ -565,81 +583,210 @@ fun QueueDialog(
                             val track = playlist[index]
                             val isCurrentTrack = track.trackId == currentTrack?.trackId
 
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { onTrackClick(track) },
-                                colors = CardDefaults.cardColors(
-                                    containerColor = if (isCurrentTrack)
-                                        MaterialTheme.colorScheme.primaryContainer
-                                    else
-                                        MaterialTheme.colorScheme.surface
+                            QueueTrackItem(
+                                track = track,
+                                index = index,
+                                isCurrentTrack = isCurrentTrack,
+                                onTrackClick = { onTrackClick(track) },
+                                onRemoveClick = { onRemoveTrack(index) }
+                            )
+                        }
+                    }
+                }
+
+                // Clear queue confirmation dialog
+                if (showClearConfirmation) {
+                    AlertDialog(
+                        onDismissRequest = { showClearConfirmation = false },
+                        title = { Text("Clear Queue?") },
+                        text = { Text("Are you sure you want to clear all ${playlist.size} tracks from the queue?") },
+                        confirmButton = {
+                            Button(
+                                onClick = {
+                                    onClearQueue()
+                                    showClearConfirmation = false
+                                },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.error
                                 )
                             ) {
-                                Row(
-                                    modifier = Modifier.padding(12.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = "${index + 1}",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = if (isCurrentTrack)
-                                            MaterialTheme.colorScheme.primary
-                                        else
-                                            MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.width(32.dp)
-                                    )
-
-                                    AsyncImage(
-                                        model = track.albumArtUri,
-                                        contentDescription = track.title,
-                                        modifier = Modifier
-                                            .size(48.dp)
-                                            .clip(RoundedCornerShape(4.dp)),
-                                        contentScale = ContentScale.Crop
-                                    )
-
-                                    Spacer(modifier = Modifier.width(12.dp))
-
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(
-                                            text = track.title,
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            fontWeight = if (isCurrentTrack) FontWeight.Bold else FontWeight.Medium,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis,
-                                            color = if (isCurrentTrack)
-                                                MaterialTheme.colorScheme.primary
-                                            else
-                                                MaterialTheme.colorScheme.onSurface
-                                        )
-
-                                        Text(
-                                            text = track.artist,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = if (isCurrentTrack)
-                                                MaterialTheme.colorScheme.onPrimaryContainer
-                                            else
-                                                MaterialTheme.colorScheme.onSurfaceVariant,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
-                                        )
-                                    }
-
-                                    if (isCurrentTrack) {
-                                        Icon(
-                                            Icons.Filled.PlayArrow,
-                                            "Now playing",
-                                            tint = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.size(24.dp)
-                                        )
-                                    }
-                                }
+                                Text("Clear")
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showClearConfirmation = false }) {
+                                Text("Cancel")
                             }
                         }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun QueueTrackItem(
+    track: Track,
+    index: Int,
+    isCurrentTrack: Boolean,
+    onTrackClick: () -> Unit,
+    onRemoveClick: () -> Unit
+) {
+    var offsetX by remember { mutableStateOf(0f) }
+    var showRemoveConfirmation by remember { mutableStateOf(false) }
+
+    Box(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        // Background delete button (revealed when swiped)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(80.dp)
+                .background(
+                    MaterialTheme.colorScheme.errorContainer,
+                    RoundedCornerShape(12.dp)
+                ),
+            contentAlignment = Alignment.CenterEnd
+        ) {
+            Icon(
+                Icons.Filled.Delete,
+                contentDescription = "Delete",
+                tint = MaterialTheme.colorScheme.error,
+                modifier = Modifier
+                    .padding(end = 24.dp)
+                    .size(32.dp)
+            )
+        }
+
+        // Track card (swipeable)
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .graphicsLayer {
+                    translationX = offsetX.coerceIn(-200f, 0f)
+                }
+                .pointerInput(Unit) {
+                    detectHorizontalDragGestures(
+                        onDragEnd = {
+                            if (offsetX < -100f) {
+                                showRemoveConfirmation = true
+                            }
+                            offsetX = 0f
+                        },
+                        onHorizontalDrag = { change, dragAmount ->
+                            change.consume()
+                            offsetX = (offsetX + dragAmount).coerceIn(-200f, 0f)
+                        }
+                    )
+                }
+                .clickable { onTrackClick() },
+            colors = CardDefaults.cardColors(
+                containerColor = if (isCurrentTrack)
+                    MaterialTheme.colorScheme.primaryContainer
+                else
+                    MaterialTheme.colorScheme.surface
+            )
+        ) {
+            Row(
+                modifier = Modifier.padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "${index + 1}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (isCurrentTrack)
+                        MaterialTheme.colorScheme.primary
+                    else
+                        MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.width(32.dp)
+                )
+
+                AsyncImage(
+                    model = track.albumArtUri,
+                    contentDescription = track.title,
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(RoundedCornerShape(4.dp)),
+                    contentScale = ContentScale.Crop
+                )
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = track.title,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = if (isCurrentTrack) FontWeight.Bold else FontWeight.Medium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        color = if (isCurrentTrack)
+                            MaterialTheme.colorScheme.primary
+                        else
+                            MaterialTheme.colorScheme.onSurface
+                    )
+
+                    Text(
+                        text = track.artist,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (isCurrentTrack)
+                            MaterialTheme.colorScheme.onPrimaryContainer
+                        else
+                            MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
+                if (isCurrentTrack) {
+                    Icon(
+                        Icons.Filled.PlayArrow,
+                        "Now playing",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                } else {
+                    IconButton(
+                        onClick = { showRemoveConfirmation = true },
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Icon(
+                            Icons.Filled.Close,
+                            "Remove from queue",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                 }
             }
         }
+    }
+
+    // Remove confirmation dialog
+    if (showRemoveConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showRemoveConfirmation = false },
+            title = { Text("Remove Track?") },
+            text = { Text("Remove \"${track.title}\" from the queue?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onRemoveClick()
+                        showRemoveConfirmation = false
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("Remove")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRemoveConfirmation = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }

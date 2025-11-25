@@ -186,6 +186,79 @@ class PlayerViewModel(
         }
     }
 
+    // Queue management functions
+    fun removeFromQueue(index: Int) {
+        val currentPlaylist = _playlist.value.toMutableList()
+        if (index in currentPlaylist.indices) {
+            currentPlaylist.removeAt(index)
+
+            // Adjust current index if needed
+            val newIndex = when {
+                index < _currentIndex.value -> _currentIndex.value - 1
+                index == _currentIndex.value && currentPlaylist.isNotEmpty() -> {
+                    // If removing current track, play the next one at the same index
+                    _currentIndex.value.coerceIn(0, currentPlaylist.size - 1)
+                }
+                else -> _currentIndex.value
+            }
+
+            _playlist.value = currentPlaylist
+            _currentIndex.value = newIndex.coerceIn(0, currentPlaylist.size - 1)
+
+            // Update player controller
+            playerController.setPlaylist(currentPlaylist, _currentIndex.value)
+        }
+    }
+
+    fun removeFromQueueByTrackId(trackId: Long) {
+        val index = _playlist.value.indexOfFirst { it.trackId == trackId }
+        if (index >= 0) {
+            removeFromQueue(index)
+        }
+    }
+
+    fun addToQueue(track: Track) {
+        val currentPlaylist = _playlist.value.toMutableList()
+        currentPlaylist.add(track)
+        _playlist.value = currentPlaylist
+        playerController.setPlaylist(currentPlaylist, _currentIndex.value)
+    }
+
+    fun addNextInQueue(track: Track) {
+        val currentPlaylist = _playlist.value.toMutableList()
+        val insertIndex = (_currentIndex.value + 1).coerceIn(0, currentPlaylist.size)
+        currentPlaylist.add(insertIndex, track)
+        _playlist.value = currentPlaylist
+        playerController.setPlaylist(currentPlaylist, _currentIndex.value)
+    }
+
+    fun moveInQueue(fromIndex: Int, toIndex: Int) {
+        val currentPlaylist = _playlist.value.toMutableList()
+        if (fromIndex in currentPlaylist.indices && toIndex in currentPlaylist.indices) {
+            val track = currentPlaylist.removeAt(fromIndex)
+            currentPlaylist.add(toIndex, track)
+
+            // Adjust current index if the current track was moved
+            val newIndex = when {
+                fromIndex == _currentIndex.value -> toIndex
+                fromIndex < _currentIndex.value && toIndex >= _currentIndex.value -> _currentIndex.value - 1
+                fromIndex > _currentIndex.value && toIndex <= _currentIndex.value -> _currentIndex.value + 1
+                else -> _currentIndex.value
+            }
+
+            _playlist.value = currentPlaylist
+            _currentIndex.value = newIndex
+            playerController.setPlaylist(currentPlaylist, newIndex)
+        }
+    }
+
+    fun clearQueue() {
+        _playlist.value = emptyList()
+        _currentIndex.value = 0
+        _currentTrack.value = null
+        playerController.pause()
+    }
+
     private fun setupPlayerListener() {
         viewModelScope.launch {
             playerController.isPlaying.collect { playing ->

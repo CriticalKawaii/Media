@@ -44,6 +44,8 @@ fun AppNavigation(
         composable(Screen.Library.route) {
             LibraryScreen(
                 viewModel = libraryViewModel,
+                playerViewModel = playerViewModel,
+                playlistViewModel = playlistViewModel,
                 onTrackClick = { track ->
                     playerViewModel.playTrack(track)
                     navController.navigate(Screen.Player.route)
@@ -54,8 +56,7 @@ fun AppNavigation(
                         playerViewModel.setPlaylist(album.tracks, 0)
                         navController.navigate(Screen.Player.route)
                     }
-                },
-                playlistViewModel = playlistViewModel
+                }
             )
         }
 

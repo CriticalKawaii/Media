@@ -34,6 +34,7 @@ import com.kiryusha.media.utils.TooltipManager
 import com.kiryusha.media.utils.rememberTooltipManager
 import com.kiryusha.media.viewmodels.LibraryUiState
 import com.kiryusha.media.viewmodels.LibraryViewModel
+import com.kiryusha.media.viewmodels.PlayerViewModel
 import com.kiryusha.media.viewmodels.PlaylistViewModel
 import com.kiryusha.media.viewmodels.ViewMode
 import kotlinx.coroutines.launch
@@ -42,6 +43,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun LibraryScreen(
     viewModel: LibraryViewModel,
+    playerViewModel: PlayerViewModel,
     playlistViewModel: PlaylistViewModel,
     onTrackClick: (Track) -> Unit,
     onAlbumClick: (Album) -> Unit
@@ -155,6 +157,7 @@ fun LibraryScreen(
                         if (searchQuery.isNotEmpty() && searchResults.isNotEmpty()) {
                             TrackListView(
                                 tracks = searchResults,
+                                playerViewModel = playerViewModel,
                                 onTrackClick = onTrackClick,
                                 onTrackLongClick = { track ->
                                     showAddToPlaylistDialog = track
@@ -180,6 +183,7 @@ fun LibraryScreen(
                                 ViewMode.TRACKS -> {
                                     TrackListView(
                                         tracks = tracks,
+                                        playerViewModel = playerViewModel,
                                         onTrackClick = onTrackClick,
                                         onTrackLongClick = { track ->
                                             showAddToPlaylistDialog = track
@@ -261,6 +265,7 @@ fun LibraryScreen(
 @Composable
 fun TrackListView(
     tracks: List<Track>,
+    playerViewModel: PlayerViewModel,
     onTrackClick: (Track) -> Unit,
     onTrackLongClick: ((Track) -> Unit)? = null
 ) {
@@ -272,6 +277,7 @@ fun TrackListView(
         items(tracks) { track ->
             SwipeableTrackItem(
                 track = track,
+                playerViewModel = playerViewModel,
                 onClick = { onTrackClick(track) },
                 onLongClick = { onTrackLongClick?.invoke(track) }
             )
@@ -283,11 +289,13 @@ fun TrackListView(
 @Composable
 fun SwipeableTrackItem(
     track: Track,
+    playerViewModel: PlayerViewModel,
     onClick: () -> Unit,
     onLongClick: (() -> Unit)? = null
 ) {
     var offsetX by remember { mutableStateOf(0f) }
     var showMenu by remember { mutableStateOf(false) }
+    var showQueueToast by remember { mutableStateOf<String?>(null) }
     val context = androidx.compose.ui.platform.LocalContext.current
 
     Box {
@@ -360,13 +368,43 @@ fun SwipeableTrackItem(
             onDismissRequest = { showMenu = false }
         ) {
             DropdownMenuItem(
+                text = { Text("Play next") },
+                onClick = {
+                    playerViewModel.addNextInQueue(track)
+                    showMenu = false
+                    android.widget.Toast.makeText(
+                        context,
+                        "\"${track.title}\" will play next",
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                },
+                leadingIcon = {
+                    Icon(Icons.Filled.PlaylistPlay, contentDescription = null)
+                }
+            )
+            DropdownMenuItem(
+                text = { Text("Add to queue") },
+                onClick = {
+                    playerViewModel.addToQueue(track)
+                    showMenu = false
+                    android.widget.Toast.makeText(
+                        context,
+                        "\"${track.title}\" added to queue",
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                },
+                leadingIcon = {
+                    Icon(Icons.Filled.Add, contentDescription = null)
+                }
+            )
+            DropdownMenuItem(
                 text = { Text("Add to playlist") },
                 onClick = {
                     onLongClick?.invoke()
                     showMenu = false
                 },
                 leadingIcon = {
-                    Icon(Icons.Filled.Add, contentDescription = null)
+                    Icon(Icons.Filled.LibraryMusic, contentDescription = null)
                 }
             )
             DropdownMenuItem(
