@@ -1,5 +1,6 @@
 package com.kiryusha.media.ui.screens.profile
 
+import android.content.Context
 import android.os.Environment
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -8,6 +9,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -17,10 +19,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
 import com.kiryusha.media.utils.AppPreferences
 import com.kiryusha.media.viewmodels.ProfileViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -50,8 +53,11 @@ fun ProfileScreen(
     }
 
     LaunchedEffect(Unit) {
-        storageInfo = calculateAudioStorage()
+        storageInfo = withContext(Dispatchers.IO) {
+            calculateAudioStorage(context)
+        }
     }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -158,7 +164,7 @@ fun ProfileScreen(
                     containerColor = MaterialTheme.colorScheme.error
                 )
             ) {
-                Icon(Icons.Filled.ExitToApp, "Logout")
+                Icon(Icons.AutoMirrored.Filled.ExitToApp, "Logout")
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Logout")
             }
@@ -338,22 +344,20 @@ fun Modifier.clickableWithoutRipple(onClick: () -> Unit): Modifier {
     )
 }
 
-@Composable
-private fun calculateAudioStorage(): String {
-    val context = LocalContext.current
-    return remember {
-        try {
-            val musicDir = context.getExternalFilesDir(Environment.DIRECTORY_MUSIC)
-            val totalSize = musicDir?.walkTopDown()?.filter { it.isFile }?.sumOf { it.length() } ?: 0L
+private fun calculateAudioStorage(context: Context): String {
+    return try {
+        val musicDir = context.getExternalFilesDir(Environment.DIRECTORY_MUSIC)
+        val totalSize = musicDir?.walkTopDown()
+            ?.filter { it.isFile }
+            ?.sumOf { it.length() } ?: 0L
 
-            when {
-                totalSize < 1024 -> "${totalSize}B"
-                totalSize < 1024 * 1024 -> "${totalSize / 1024}KB"
-                totalSize < 1024 * 1024 * 1024 -> String.format("%.1fMB", totalSize / (1024f * 1024f))
-                else -> String.format("%.2fGB", totalSize / (1024f * 1024f * 1024f))
-            }
-        } catch (e: Exception) {
-            "Unable to calculate"
+        when {
+            totalSize < 1024 -> "${totalSize}B"
+            totalSize < 1024 * 1024 -> "${totalSize / 1024}KB"
+            totalSize < 1024 * 1024 * 1024 -> String.format("%.1fMB", totalSize / (1024f * 1024f))
+            else -> String.format("%.2fGB", totalSize / (1024f * 1024f * 1024f))
         }
+    } catch (e: Exception) {
+        "Unable to calculate"
     }
 }

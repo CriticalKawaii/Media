@@ -28,6 +28,7 @@ import coil.compose.AsyncImage
 import com.kiryusha.media.database.entities.Album
 import com.kiryusha.media.database.entities.PlaylistWithTracks
 import com.kiryusha.media.database.entities.Track
+import com.kiryusha.media.utils.OnboardingStep
 import com.kiryusha.media.utils.OnboardingSteps
 import com.kiryusha.media.utils.TooltipManager
 import com.kiryusha.media.utils.rememberTooltipManager
