@@ -144,6 +144,58 @@ class MusicPlayerController(private val context: Context) {
         }
     }
 
+    fun addTrackToQueue(track: Track) {
+        exoPlayer?.let { player ->
+            try {
+                val mediaItem = MediaItem.Builder()
+                    .setUri(track.filePath.toUri())
+                    .setMediaId(track.trackId.toString())
+                    .build()
+
+                player.addMediaItem(mediaItem)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun addTracksToQueue(tracks: List<Track>) {
+        exoPlayer?.let { player ->
+            try {
+                val mediaItems = tracks.map { track ->
+                    MediaItem.Builder()
+                        .setUri(track.filePath.toUri())
+                        .setMediaId(track.trackId.toString())
+                        .build()
+                }
+
+                player.addMediaItems(mediaItems)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun removeTrackFromQueue(index: Int) {
+        exoPlayer?.let { player ->
+            try {
+                if (index >= 0 && index < player.mediaItemCount) {
+                    player.removeMediaItem(index)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun getCurrentMediaItemIndex(): Int {
+        return exoPlayer?.currentMediaItemIndex ?: 0
+    }
+
+    fun getMediaItemCount(): Int {
+        return exoPlayer?.mediaItemCount ?: 0
+    }
+
     fun release() {
         unbindService()
         exoPlayer?.release()

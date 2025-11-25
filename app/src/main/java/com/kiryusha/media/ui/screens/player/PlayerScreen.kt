@@ -246,6 +246,9 @@ fun PlayerScreen(
                         viewModel.playTrack(track)
                     }
                     showQueueDialog = false
+                },
+                onRemoveTrack = { track ->
+                    viewModel.removeTrackFromQueue(track)
                 }
             )
         }
@@ -507,7 +510,8 @@ fun QueueDialog(
     playlist: List<Track>,
     currentTrack: Track?,
     onDismiss: () -> Unit,
-    onTrackClick: (Track) -> Unit
+    onTrackClick: (Track) -> Unit,
+    onRemoveTrack: (Track) -> Unit
 ) {
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -632,6 +636,16 @@ fun QueueDialog(
                                             "Now playing",
                                             tint = MaterialTheme.colorScheme.primary,
                                             modifier = Modifier.size(24.dp)
+                                        )
+                                    }
+
+                                    IconButton(
+                                        onClick = { onRemoveTrack(track) }
+                                    ) {
+                                        Icon(
+                                            Icons.Filled.Close,
+                                            "Remove from queue",
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
                                 }
