@@ -83,6 +83,8 @@ dependencies {
 
     implementation("com.google.accompanist:accompanist-permissions:0.34.0")
 
+    implementation("org.burnoutcrew.composereorderable:reorderable:0.9.6")
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

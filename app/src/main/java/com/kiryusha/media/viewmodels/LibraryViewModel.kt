@@ -7,6 +7,7 @@ import com.kiryusha.media.database.entities.Track
 import com.kiryusha.media.repository.MusicRepository
 import com.kiryusha.media.utils.MediaScanner
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 class LibraryViewModel(
@@ -90,7 +91,7 @@ class LibraryViewModel(
                     _uiState.value = LibraryUiState.Loaded(trackCount)
                 }
             } catch (e: Exception) {
-                _uiState.value = LibraryUiState.Error(e.message ?: "Неизвестная ошибка")
+                _uiState.value = LibraryUiState.Error(e.message ?: "Unknown error")
             }
         }
     }
@@ -101,7 +102,7 @@ class LibraryViewModel(
                 val albumList = musicRepository.getAllAlbums()
                 _albums.value = albumList
             } catch (e: Exception) {
-                _uiState.value = LibraryUiState.Error("Ошибка загрузки альбомов: ${e.message}")
+                _uiState.value = LibraryUiState.Error("Error loading albums: ${e.message}")
             }
         }
     }
@@ -110,13 +111,11 @@ class LibraryViewModel(
         _searchQuery.value = query
     }
 
-    fun loadAlbumTracks(albumName: String) {
-        viewModelScope.launch {
-            try {
-                val album = musicRepository.getAlbumWithTracks(albumName)
-            } catch (e: Exception) {
-                _uiState.value = LibraryUiState.Error("Failed to load album")
-            }
+    fun cycleViewMode() {
+        _viewMode.value = when (_viewMode.value) {
+            ViewMode.ALBUMS -> ViewMode.TRACKS
+            ViewMode.TRACKS -> ViewMode.ARTISTS
+            ViewMode.ARTISTS -> ViewMode.ALBUMS
         }
     }
 
@@ -125,13 +124,217 @@ class LibraryViewModel(
             try {
                 musicRepository.toggleFavorite(trackId, isFavorite)
             } catch (e: Exception) {
-                _uiState.value = LibraryUiState.Error("Ошибка обновления избранного")
+                _uiState.value = LibraryUiState.Error("Error updating favorite")
             }
         }
     }
 
     fun refreshLibrary() {
         loadLibrary()
+    }
+}
+
+// Enhanced PlayerViewModel with favorite toggle
+class EnhancedPlayerViewModel(
+    private val musicRepository: MusicRepository,
+    private val playerController: com.kiryusha.media.utils.MusicPlayerController
+) : ViewModel() {
+
+    private val _currentTrack = MutableStateFlow<Track?>(null)
+    val currentTrack: StateFlow<Track?> = _currentTrack.asStateFlow()
+
+    private val _isPlaying = MutableStateFlow(false)
+    val isPlaying: StateFlow<Boolean> = _isPlaying.asStateFlow()
+
+    private val _progress = MutableStateFlow(0f)
+    val progress: StateFlow<Float> = _progress.asStateFlow()
+
+    private val _currentPosition = MutableStateFlow(0L)
+    val currentPosition: StateFlow<Long> = _currentPosition.asStateFlow()
+
+    private val _playlist = MutableStateFlow<List<Track>>(emptyList())
+    val playlist: StateFlow<List<Track>> = _playlist.asStateFlow()
+
+    private val _currentIndex = MutableStateFlow(0)
+    val currentIndex: StateFlow<Int> = _currentIndex.asStateFlow()
+
+    private val _shuffleEnabled = MutableStateFlow(false)
+    val shuffleEnabled: StateFlow<Boolean> = _shuffleEnabled.asStateFlow()
+
+    private val _repeatMode = MutableStateFlow(RepeatMode.OFF)
+    val repeatMode: StateFlow<RepeatMode> = _repeatMode.asStateFlow()
+
+    private val _playerState = MutableStateFlow<PlayerState>(PlayerState.Idle)
+    val playerState: StateFlow<PlayerState> = _playerState.asStateFlow()
+
+    private var userId: Int = -1
+    private var progressUpdateJob: kotlinx.coroutines.Job? = null
+
+    init {
+        viewModelScope.launch {
+            playerController.isPlaying.collect { playing ->
+                _isPlaying.value = playing
+                if (playing) {
+                    startProgressUpdate()
+                } else {
+                    stopProgressUpdate()
+                }
+            }
+        }
+    }
+
+    fun setUserId(id: Int) {
+        userId = id
+    }
+
+    fun playTrack(track: Track) {
+        viewModelScope.launch {
+            _currentTrack.value = track
+            _progress.value = 0f
+            _currentPosition.value = 0L
+            _playerState.value = PlayerState.Playing
+
+            playerController.playTrack(track)
+
+            if (userId != -1) {
+                musicRepository.recordPlay(track.trackId, userId)
+            }
+        }
+    }
+
+    fun setPlaylist(tracks: List<Track>, startIndex: Int = 0) {
+        _playlist.value = tracks
+        _currentIndex.value = startIndex
+        playerController.setPlaylist(tracks, startIndex)
+
+        if (tracks.isNotEmpty() && startIndex < tracks.size) {
+            _currentTrack.value = tracks[startIndex]
+        }
+    }
+
+    fun togglePlayPause() {
+        if (_isPlaying.value) {
+            playerController.pause()
+        } else {
+            playerController.play()
+        }
+    }
+
+    fun skipNext() {
+        viewModelScope.launch {
+            val currentPlaylist = _playlist.value
+            if (currentPlaylist.isEmpty()) return@launch
+
+            val nextIndex = when {
+                _shuffleEnabled.value -> {
+                    val availableIndices = currentPlaylist.indices.filter { it != _currentIndex.value }
+                    if (availableIndices.isEmpty()) {
+                        currentPlaylist.indices.random()
+                    } else {
+                        availableIndices.random()
+                    }
+                }
+                _currentIndex.value < currentPlaylist.size - 1 -> _currentIndex.value + 1
+                _repeatMode.value == RepeatMode.ALL -> 0
+                else -> return@launch
+            }
+
+            _currentIndex.value = nextIndex
+            playTrack(currentPlaylist[nextIndex])
+        }
+    }
+
+    fun skipPrevious() {
+        viewModelScope.launch {
+            val currentPlaylist = _playlist.value
+            if (currentPlaylist.isEmpty()) return@launch
+
+            if (_currentPosition.value > 3000) {
+                seekTo(0L)
+                return@launch
+            }
+
+            val previousIndex = when {
+                _currentIndex.value > 0 -> _currentIndex.value - 1
+                _repeatMode.value == RepeatMode.ALL -> currentPlaylist.size - 1
+                else -> 0
+            }
+
+            _currentIndex.value = previousIndex
+            playTrack(currentPlaylist[previousIndex])
+        }
+    }
+
+    fun seekTo(position: Long) {
+        playerController.seekTo(position)
+        _currentPosition.value = position
+        _currentTrack.value?.let { track ->
+            _progress.value = position.toFloat() / track.durationMs.toFloat()
+        }
+    }
+
+    fun toggleShuffle() {
+        _shuffleEnabled.value = !_shuffleEnabled.value
+    }
+
+    fun cycleRepeatMode() {
+        _repeatMode.value = when (_repeatMode.value) {
+            RepeatMode.OFF -> RepeatMode.ALL
+            RepeatMode.ALL -> RepeatMode.ONE
+            RepeatMode.ONE -> RepeatMode.OFF
+        }
+    }
+
+    fun toggleFavorite(trackId: Long, isFavorite: Boolean) {
+        viewModelScope.launch {
+            try {
+                musicRepository.toggleFavorite(trackId, !isFavorite)
+                // Update current track if it's the one being favorited
+                _currentTrack.value?.let { track ->
+                    if (track.trackId == trackId) {
+                        _currentTrack.value = track.copy(isFavorite = !isFavorite)
+                    }
+                }
+            } catch (e: Exception) {
+                // Handle error
+            }
+        }
+    }
+
+    private fun startProgressUpdate() {
+        progressUpdateJob?.cancel()
+        progressUpdateJob = viewModelScope.launch {
+            while (isActive) {
+                val position = playerController.getCurrentPosition()
+                _currentPosition.value = position
+
+                _currentTrack.value?.let { track ->
+                    _progress.value = if (track.durationMs > 0) {
+                        position.toFloat() / track.durationMs.toFloat()
+                    } else {
+                        0f
+                    }
+
+                    if (position >= track.durationMs - 500 && track.durationMs > 0) {
+                        when (_repeatMode.value) {
+                            RepeatMode.ONE -> seekTo(0L)
+                            else -> skipNext()
+                        }
+                    }
+                }
+
+                kotlinx.coroutines.delay(100)
+            }
+        }
+    }
+
+    private fun stopProgressUpdate() {
+        progressUpdateJob?.cancel()
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        stopProgressUpdate()
     }
 }
 

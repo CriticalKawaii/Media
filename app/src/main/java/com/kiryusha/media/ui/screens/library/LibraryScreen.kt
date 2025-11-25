@@ -1,6 +1,9 @@
 package com.kiryusha.media.ui.screens.library
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -13,6 +16,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -21,16 +26,22 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.kiryusha.media.database.entities.Album
+import com.kiryusha.media.database.entities.PlaylistWithTracks
 import com.kiryusha.media.database.entities.Track
+import com.kiryusha.media.utils.OnboardingSteps
+import com.kiryusha.media.utils.TooltipManager
+import com.kiryusha.media.utils.rememberTooltipManager
 import com.kiryusha.media.viewmodels.LibraryUiState
 import com.kiryusha.media.viewmodels.LibraryViewModel
+import com.kiryusha.media.viewmodels.PlaylistViewModel
 import com.kiryusha.media.viewmodels.ViewMode
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LibraryScreen(
-    viewModel: LibraryViewModel = viewModel(),
+    viewModel: LibraryViewModel,
+    playlistViewModel: PlaylistViewModel,
     onTrackClick: (Track) -> Unit,
     onAlbumClick: (Album) -> Unit
 ) {
@@ -40,28 +51,53 @@ fun LibraryScreen(
     val viewMode by viewModel.viewMode.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val searchResults by viewModel.searchResults.collectAsState()
+    val playlists by playlistViewModel.userPlaylists.collectAsState()
 
     var showSearchBar by remember { mutableStateOf(false) }
-    val coroutineScope = rememberCoroutineScope()
+    var showAddToPlaylistDialog by remember { mutableStateOf<Track?>(null) }
+    var showCreatePlaylistDialog by remember { mutableStateOf(false) }
 
+    // Tooltip management
+    val tooltipManager = rememberTooltipManager()
+    var currentOnboardingStep by remember { mutableStateOf(0) }
+    var showOnboarding by remember { mutableStateOf(tooltipManager.shouldShowOnboarding()) }
+    var showLongPressTooltip by remember { mutableStateOf(false) }
+    var active by remember { mutableStateOf(false) }
     Scaffold(
         topBar = {
             if (showSearchBar) {
                 SearchBar(
                     query = searchQuery,
                     onQueryChange = { viewModel.setSearchQuery(it) },
-                    onClose = {
-                        showSearchBar = false
-                        viewModel.setSearchQuery("")
-                    }
-                )
+                    onSearch = { active = false },
+                    active = active,
+                    onActiveChange = { active = it },
+                    placeholder = { Text("Search...") }
+                ) {
+
+                }
             } else {
                 TopAppBar(
                     title = { Text("Library") },
                     actions = {
+                        // View mode toggle
+                        IconButton(onClick = {
+                            viewModel.cycleViewMode()
+                        }) {
+                            Icon(
+                                when(viewMode) {
+                                    ViewMode.ALBUMS -> Icons.Filled.GridView
+                                    ViewMode.TRACKS -> Icons.Filled.List
+                                    ViewMode.ARTISTS -> Icons.Filled.Person
+                                },
+                                "View Mode"
+                            )
+                        }
+
                         IconButton(onClick = { showSearchBar = true }) {
                             Icon(Icons.Filled.Search, "Search")
                         }
+
                         IconButton(onClick = { viewModel.scanMediaFiles() }) {
                             Icon(Icons.Filled.Refresh, "Scan Media")
                         }
@@ -91,125 +127,133 @@ fun LibraryScreen(
                     }
                 }
                 is LibraryUiState.Empty -> {
-                    EmptyLibraryView(
-                        onScanClick = { viewModel.scanMediaFiles() }
-                    )
+//                    EmptyLibraryView(
+//                        onScanClick = { viewModel.scanMediaFiles() }
+//                    )
                 }
                 is LibraryUiState.Error -> {
-                    ErrorView(
-                        message = (uiState as LibraryUiState.Error).message,
-                        onRetry = { viewModel.loadLibrary() }
-                    )
+//                    ErrorView(
+//                        message = (uiState as LibraryUiState.Error).message,
+//                        onRetry = { viewModel.loadLibrary() }
+//                    )
                 }
                 else -> {
-                    if (searchQuery.isNotEmpty() && searchResults.isNotEmpty()) {
-                        TrackListView(
-                            tracks = searchResults,
-                            onTrackClick = onTrackClick
-                        )
-                    } else {
-                        when (viewMode) {
-                            ViewMode.ALBUMS -> {
-                                AlbumGridView(
-                                    albums = albums,
-                                    onAlbumClick = { album ->
-                                        viewModel.viewModelScope.launch {
-                                            val fullAlbum = viewModel.musicRepository.getAlbumWithTracks(album.name)
-                                            if (fullAlbum != null) {
-                                                onAlbumClick(fullAlbum)
-                                            }
+                    Column {
+                        // Show long press tooltip
+                        if (showLongPressTooltip && tooltipManager.shouldShow(TooltipManager.TOOLTIP_LONG_PRESS_TRACK)) {
+//                            ContextTooltip(
+//                                message = "Long press any track to add it to a playlist or see more options",
+//                                onDismiss = { showLongPressTooltip = false },
+//                                onDontShowAgain = {
+//                                    tooltipManager.dontShowAgain(TooltipManager.TOOLTIP_LONG_PRESS_TRACK)
+//                                    showLongPressTooltip = false
+//                                }
+//                            )
+                        }
+
+                        if (searchQuery.isNotEmpty() && searchResults.isNotEmpty()) {
+                            TrackListView(
+                                tracks = searchResults,
+                                onTrackClick = onTrackClick,
+                                onTrackLongClick = { track ->
+                                    showAddToPlaylistDialog = track
+                                    showLongPressTooltip = true
+                                }
+                            )
+                        } else {
+                            when (viewMode) {
+
+                                ViewMode.ALBUMS -> {
+                                    //Unresolved reference 'AlbumGridView'.
+//                                    AlbumGridView(
+//                                        albums = albums,
+//                                        onAlbumClick = { album ->
+//                                            viewModel.viewModelScope.launch {
+//                                                val fullAlbum = viewModel.musicRepository.getAlbumWithTracks(album.name)
+//                                                if (fullAlbum != null) {
+//                                                    onAlbumClick(fullAlbum)
+//                                                }
+//                                            }
+//                                        }
+//                                    )
+                                }
+                                ViewMode.TRACKS -> {
+                                    TrackListView(
+                                        tracks = tracks,
+                                        onTrackClick = onTrackClick,
+                                        onTrackLongClick = { track ->
+                                            showAddToPlaylistDialog = track
                                         }
-                                    }
-                                )
-                            }
-                            ViewMode.TRACKS -> {
-                                TrackListView(
-                                    tracks = tracks,
-                                    onTrackClick = onTrackClick
-                                )
-                            }
-                            ViewMode.ARTISTS -> {
-                                // TODO: Artists view
-                                Text("Artists view - Coming soon")
+                                    )
+                                }
+                                ViewMode.ARTISTS -> {
+                                    Text("Artists view - Coming soon")
+                                }
                             }
                         }
                     }
                 }
             }
         }
-    }
-}
 
-@Composable
-fun AlbumGridView(
-    albums: List<Album>,
-    onAlbumClick: (Album) -> Unit
-) {
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(2),
-        contentPadding = PaddingValues(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        items(albums) { album ->
-            AlbumCard(
-                album = album,
-                onClick = { onAlbumClick(album) }
+        // Onboarding dialog
+        if (showOnboarding && currentOnboardingStep < OnboardingSteps.steps.size) {
+//            TooltipDialog(
+//                step = OnboardingSteps.steps[currentOnboardingStep],
+//                currentStep = currentOnboardingStep,
+//                totalSteps = OnboardingSteps.steps.size,
+//                onNext = {
+//                    if (currentOnboardingStep == OnboardingSteps.steps.size - 1) {
+//                        tooltipManager.completeOnboarding()
+//                        showOnboarding = false
+//                    } else {
+//                        currentOnboardingStep++
+//                    }
+//                },
+//                onSkip = {
+//                    tooltipManager.completeOnboarding()
+//                    showOnboarding = false
+//                },
+//                onDismiss = {
+//                    showOnboarding = false
+//                }
+//            )
+        }
+
+        // Add to playlist dialog
+        showAddToPlaylistDialog?.let { track ->
+            AddToPlaylistDialog(
+                track = track,
+                playlists = playlists,
+                onDismiss = { showAddToPlaylistDialog = null },
+                onAddToPlaylist = { playlistId ->
+                    playlistViewModel.addTrackToPlaylist(playlistId, track.trackId)
+                    showAddToPlaylistDialog = null
+                },
+                onCreateNewPlaylist = {
+                    showCreatePlaylistDialog = true
+                }
+            )
+        }
+
+        if (showCreatePlaylistDialog) {
+            CreatePlaylistDialog(
+                onDismiss = { showCreatePlaylistDialog = false },
+                onConfirm = { name, description ->
+                    playlistViewModel.createPlaylist(name, description)
+                    showCreatePlaylistDialog = false
+                }
             )
         }
     }
 }
 
-@Composable
-fun AlbumCard(
-    album: Album,
-    onClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-    ) {
-        Column {
-            AsyncImage(
-                model = album.coverUri,
-                contentDescription = album.name,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(1f)
-                    .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)),
-                contentScale = ContentScale.Crop
-            )
-
-            Column(modifier = Modifier.padding(12.dp)) {
-                Text(
-                    text = album.name,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Text(
-                    text = album.artist,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-        }
-    }
-}
-
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TrackListView(
     tracks: List<Track>,
-    onTrackClick: (Track) -> Unit
+    onTrackClick: (Track) -> Unit,
+    onTrackLongClick: ((Track) -> Unit)? = null
 ) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(1),
@@ -217,168 +261,209 @@ fun TrackListView(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         items(tracks) { track ->
-            TrackItem(
+            SwipeableTrackItem(
                 track = track,
-                onClick = { onTrackClick(track) }
+                onClick = { onTrackClick(track) },
+                onLongClick = { onTrackLongClick?.invoke(track) }
             )
         }
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun TrackItem(
+fun SwipeableTrackItem(
     track: Track,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onLongClick: (() -> Unit)? = null
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        AsyncImage(
-            model = track.albumArtUri,
-            contentDescription = track.title,
+    var offsetX by remember { mutableStateOf(0f) }
+    var showMenu by remember { mutableStateOf(false) }
+
+    Box {
+        Row(
             modifier = Modifier
-                .size(56.dp)
-                .clip(RoundedCornerShape(8.dp)),
-            contentScale = ContentScale.Crop
-        )
-
-        Spacer(modifier = Modifier.width(12.dp))
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = track.title,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                .fillMaxWidth()
+                .graphicsLayer {
+                    translationX = offsetX
+                }
+                .pointerInput(Unit) {
+                    detectHorizontalDragGestures(
+                        onDragEnd = {
+                            offsetX = 0f
+                        },
+                        onHorizontalDrag = { change, dragAmount ->
+                            change.consume()
+                            offsetX = (offsetX + dragAmount).coerceIn(-200f, 200f)
+                        }
+                    )
+                }
+                .combinedClickable(
+                    onClick = onClick,
+                    onLongClick = onLongClick
+                )
+                .padding(vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AsyncImage(
+                model = track.albumArtUri,
+                contentDescription = track.title,
+                modifier = Modifier
+                    .size(56.dp)
+                    .clip(RoundedCornerShape(8.dp)),
+                contentScale = ContentScale.Crop
             )
 
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = track.title,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                Text(
+                    text = "${track.artist} • ${track.album}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
             Text(
-                text = "${track.artist} • ${track.album}",
+                text = track.getDurationFormatted(),
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+
+            IconButton(onClick = { showMenu = true }) {
+                Icon(Icons.Filled.MoreVert, "More options")
+            }
         }
 
-        Text(
-            text = track.getDurationFormatted(),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        DropdownMenu(
+            expanded = showMenu,
+            onDismissRequest = { showMenu = false }
+        ) {
+            DropdownMenuItem(
+                text = { Text("Add to playlist") },
+                onClick = {
+                    onLongClick?.invoke()
+                    showMenu = false
+                },
+                leadingIcon = {
+                    Icon(Icons.Filled.Add, contentDescription = null)
+                }
+            )
+            DropdownMenuItem(
+                text = { Text("Share") },
+                onClick = { showMenu = false },
+                leadingIcon = {
+                    Icon(Icons.Filled.Share, contentDescription = null)
+                }
+            )
+        }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SearchBar(
-    query: String,
-    onQueryChange: (String) -> Unit,
-    onClose: () -> Unit
+fun AddToPlaylistDialog(
+    track: Track,
+    playlists: List<PlaylistWithTracks>,
+    onDismiss: () -> Unit,
+    onAddToPlaylist: (Long) -> Unit,
+    onCreateNewPlaylist: () -> Unit
 ) {
-    TopAppBar(
-        title = {
-            TextField(
-                value = query,
-                onValueChange = onQueryChange,
-                placeholder = { Text("Search tracks...") },
-                modifier = Modifier.fillMaxWidth(),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surface
-                ),
-                singleLine = true
-            )
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Add to Playlist") },
+        text = {
+            Column {
+                Text("Add \"${track.title}\" to:")
+                Spacer(modifier = Modifier.height(16.dp))
+
+                playlists.forEach { playlist ->
+                    TextButton(
+                        onClick = { onAddToPlaylist(playlist.playlist.playlistId) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(playlist.playlist.name)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Button(
+                    onClick = onCreateNewPlaylist,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Filled.Add, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Create New Playlist")
+                }
+            }
         },
-        navigationIcon = {
-            IconButton(onClick = onClose) {
-                Icon(Icons.Filled.ArrowBack, "Close search")
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
             }
         }
     )
 }
 
 @Composable
-fun EmptyLibraryView(onScanClick: () -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Icon(
-            imageVector = Icons.Filled.Info,
-            contentDescription = "Empty library",
-            modifier = Modifier.size(64.dp),
-            tint = MaterialTheme.colorScheme.primary
-        )
+fun CreatePlaylistDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (String, String?) -> Unit
+) {
+    var name by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
 
-        Spacer(modifier = Modifier.height(16.dp))
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Create Playlist") },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Playlist Name") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
 
-        Text(
-            text = "No music found",
-            style = MaterialTheme.typography.headlineMedium
-        )
+                Spacer(modifier = Modifier.height(12.dp))
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = "Scan your device to find music files",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Button(onClick = onScanClick) {
-            Icon(Icons.Filled.Refresh, contentDescription = null)
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Scan Device")
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("Description (optional)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    maxLines = 3
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    if (name.isNotBlank()) {
+                        onConfirm(name.trim(), description.trim().ifBlank { null })
+                    }
+                },
+                enabled = name.isNotBlank()
+            ) {
+                Text("Create")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
         }
-    }
-}
-
-@Composable
-fun ErrorView(message: String, onRetry: () -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Icon(
-            imageVector = Icons.Filled.Close,
-            contentDescription = "Error",
-            modifier = Modifier.size(64.dp),
-            tint = MaterialTheme.colorScheme.error
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text(
-            text = "Error",
-            style = MaterialTheme.typography.headlineMedium
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = message,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Button(onClick = onRetry) {
-            Text("Retry")
-        }
-    }
+    )
 }

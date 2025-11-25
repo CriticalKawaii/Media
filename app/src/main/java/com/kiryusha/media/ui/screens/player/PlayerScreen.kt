@@ -1,9 +1,15 @@
-package com.kiryusha.media.ui.screens.player
+package com.kiryusha.media.ui.screens.playlists
 
-import androidx.compose.animation.core.*
+import android.content.Intent
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -13,18 +19,26 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import com.kiryusha.media.database.entities.PlaylistWithTracks
 import com.kiryusha.media.viewmodels.PlayerViewModel
+import com.kiryusha.media.viewmodels.PlaylistUiState
+import com.kiryusha.media.viewmodels.PlaylistViewModel
 import com.kiryusha.media.viewmodels.RepeatMode
+import kotlin.math.abs
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlayerScreen(
-    viewModel: PlayerViewModel = viewModel(),
+    viewModel: PlayerViewModel,
     onBackClick: () -> Unit
 ) {
     val currentTrack by viewModel.currentTrack.collectAsState()
@@ -33,6 +47,10 @@ fun PlayerScreen(
     val currentPosition by viewModel.currentPosition.collectAsState()
     val shuffleEnabled by viewModel.shuffleEnabled.collectAsState()
     val repeatMode by viewModel.repeatMode.collectAsState()
+
+    var offsetX by remember { mutableStateOf(0f) }
+    var showExpandedArt by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     Scaffold(
         topBar = {
@@ -44,11 +62,20 @@ fun PlayerScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { /* Share */ }) {
+                    IconButton(onClick = {
+                        currentTrack?.let { track ->
+                            val shareIntent = Intent().apply {
+                                action = Intent.ACTION_SEND
+                                putExtra(Intent.EXTRA_TEXT, "Now playing: ${track.title} by ${track.artist}")
+                                type = "text/plain"
+                            }
+                            context.startActivity(Intent.createChooser(shareIntent, "Share via"))
+                        }
+                    }) {
                         Icon(Icons.Filled.Share, "Share")
                     }
-                    IconButton(onClick = { /* More options */ }) {
-                        Icon(Icons.Filled.MoreVert, "More")
+                    IconButton(onClick = { /* Queue */ }) {
+                        Icon(Icons.Filled.PlaylistPlay, "Queue")
                     }
                 }
             )
@@ -71,12 +98,32 @@ fun PlayerScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(24.dp),
+                        .padding(24.dp)
+                        .pointerInput(Unit) {
+                            detectHorizontalDragGestures(
+                                onDragEnd = {
+                                    if (abs(offsetX) > 100) {
+                                        if (offsetX > 0) {
+                                            viewModel.skipPrevious()
+                                        } else {
+                                            viewModel.skipNext()
+                                        }
+                                    }
+                                    offsetX = 0f
+                                },
+                                onHorizontalDrag = { change, dragAmount ->
+                                    change.consume()
+                                    offsetX += dragAmount
+                                }
+                            )
+                        },
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    AnimatedAlbumArt(
+                    SwipeableAlbumArt(
                         albumArtUri = track.albumArtUri,
-                        isPlaying = isPlaying
+                        isPlaying = isPlaying,
+                        offsetX = offsetX,
+                        onClick = { showExpandedArt = true }
                     )
 
                     Spacer(modifier = Modifier.height(32.dp))
@@ -120,23 +167,27 @@ fun PlayerScreen(
                         IconButton(onClick = { /* Add to playlist */ }) {
                             Icon(Icons.Filled.Add, "Add to playlist")
                         }
-                        IconButton(onClick = { /* Favorite */ }) {
+                        /* unresolved toggleFavorite
+                        IconButton(onClick = {
+                            viewModel.toggleFavorite(track.trackId, !track.isFavorite)
+                        }) {
                             Icon(
                                 if (track.isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                                "Favorite"
+                                "Favorite",
+                                tint = if (track.isFavorite) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
                             )
                         }
+                        */
                     }
                 }
             } ?: run {
-                // No track playing
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
                     Icon(
-                        imageVector = Icons.Filled.Info,
+                        imageVector = Icons.Filled.MusicNote,
                         contentDescription = "No track",
                         modifier = Modifier.size(64.dp),
                         tint = MaterialTheme.colorScheme.primary
@@ -149,13 +200,23 @@ fun PlayerScreen(
                 }
             }
         }
+
+        // Expanded Album Art Dialog
+        if (showExpandedArt) {
+            ExpandedAlbumArtDialog(
+                albumArtUri = currentTrack?.albumArtUri,
+                onDismiss = { showExpandedArt = false }
+            )
+        }
     }
 }
 
 @Composable
-fun AnimatedAlbumArt(
+fun SwipeableAlbumArt(
     albumArtUri: String?,
-    isPlaying: Boolean
+    isPlaying: Boolean,
+    offsetX: Float,
+    onClick: () -> Unit
 ) {
     val scale by animateFloatAsState(
         targetValue = if (isPlaying) 1f else 0.95f,
@@ -176,10 +237,71 @@ fun AnimatedAlbumArt(
             contentDescription = "Album Art",
             modifier = Modifier
                 .fillMaxSize()
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                    translationX = offsetX * 0.5f
+                    rotationY = offsetX * 0.05f
+                }
                 .clip(RoundedCornerShape(16.dp))
-                .clickable { /* Expand album art */ },
+                .clickable(onClick = onClick),
             contentScale = ContentScale.Crop
         )
+
+        // Swipe hint indicators
+        if (abs(offsetX) > 50) {
+            Icon(
+                imageVector = if (offsetX > 0) Icons.Filled.SkipPrevious else Icons.Filled.SkipNext,
+                contentDescription = null,
+                modifier = Modifier
+                    .align(if (offsetX > 0) Alignment.CenterStart else Alignment.CenterEnd)
+                    .padding(32.dp)
+                    .size(48.dp)
+                    .graphicsLayer {
+                        alpha = (abs(offsetX) / 200f).coerceIn(0f, 1f)
+                    },
+                tint = MaterialTheme.colorScheme.primary
+            )
+        }
+    }
+}
+
+@Composable
+fun ExpandedAlbumArtDialog(
+    albumArtUri: String?,
+    onDismiss: () -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background.copy(alpha = 0.95f))
+                .clickable(onClick = onDismiss),
+            contentAlignment = Alignment.Center
+        ) {
+            AsyncImage(
+                model = albumArtUri,
+                contentDescription = "Expanded Album Art",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(32.dp)
+                    .clip(RoundedCornerShape(16.dp)),
+                contentScale = ContentScale.FillWidth
+            )
+
+            IconButton(
+                onClick = onDismiss,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(16.dp)
+            ) {
+                Icon(
+                    Icons.Filled.Close,
+                    "Close",
+                    tint = MaterialTheme.colorScheme.onBackground
+                )
+            }
+        }
     }
 }
 
@@ -196,7 +318,7 @@ fun TrackInfo(
             text = title,
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
-            maxLines = 1
+            maxLines = 2
         )
 
         Spacer(modifier = Modifier.height(8.dp))

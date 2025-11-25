@@ -1,5 +1,6 @@
 package com.kiryusha.media.ui.screens.profile
 
+import android.os.Environment
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -13,10 +14,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.kiryusha.media.utils.AppPreferences
 import com.kiryusha.media.viewmodels.ProfileViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,17 +33,35 @@ fun ProfileScreen(
     val userStats by viewModel.userStats.collectAsState()
     val playlistCount by viewModel.playlistCount.collectAsState()
 
-    var showLogoutDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val appPreferences = remember { AppPreferences(context) }
+    val coroutineScope = rememberCoroutineScope()
+
     var darkTheme by remember { mutableStateOf(false) }
+    var showLogoutDialog by remember { mutableStateOf(false) }
+    var storageInfo by remember { mutableStateOf("Calculating...") }
 
     LaunchedEffect(userId) {
         viewModel.loadUserProfile(userId)
-    }
 
+        appPreferences.isDarkTheme().collect { isDark ->
+            darkTheme = isDark
+        }
+    }
+    /*
+        LaunchedEffect(Unit) {
+            storageInfo = calculateAudioStorage()
+        }
+    */
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Profile") }
+                title = { Text("Profile") },
+                actions = {
+                    IconButton(onClick = { /* Settings */ }) {
+                        Icon(Icons.Filled.Settings, "Settings")
+                    }
+                }
             )
         }
     ) { paddingValues ->
@@ -50,7 +72,6 @@ fun ProfileScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
-            // Profile Header
             ProfileHeader(
                 username = currentUser?.userName ?: "User",
                 email = currentUser?.login ?: "user@example.com"
@@ -58,7 +79,6 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Statistics Card
             StatsCard(
                 totalTracks = userStats?.totalTracks ?: 0,
                 totalPlaylists = playlistCount,
@@ -67,7 +87,6 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Settings Section
             Text(
                 text = "Settings",
                 style = MaterialTheme.typography.titleMedium,
@@ -76,31 +95,43 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Theme Toggle
             SettingsItem(
-                icon = Icons.Filled.Face,
+                icon = Icons.Filled.DarkMode,
                 title = "Dark Theme",
+                subtitle = if (darkTheme) "Enabled" else "Disabled",
                 trailing = {
                     Switch(
                         checked = darkTheme,
-                        onCheckedChange = { darkTheme = it }
+                        onCheckedChange = { enabled ->
+                            darkTheme = enabled
+                            coroutineScope.launch {
+                                appPreferences.setDarkTheme(enabled)
+                            }
+                        }
                     )
                 }
             )
 
-            Divider()
+            HorizontalDivider()
 
-            // Storage
             SettingsItem(
-                icon = Icons.Filled.Info,
+                icon = Icons.Filled.Storage,
                 title = "Storage Used",
-                subtitle = "2.4 GB of audio files",
+                subtitle = storageInfo,
                 onClick = { }
             )
 
-            Divider()
+            HorizontalDivider()
 
-            // About
+            SettingsItem(
+                icon = Icons.Filled.Notifications,
+                title = "Notifications",
+                subtitle = "Manage notification preferences",
+                onClick = { /* TODO: Open notifications settings */ }
+            )
+
+            HorizontalDivider()
+
             SettingsItem(
                 icon = Icons.Filled.Info,
                 title = "About",
@@ -108,11 +139,19 @@ fun ProfileScreen(
                 onClick = { }
             )
 
-            Divider()
+            HorizontalDivider()
+
+            SettingsItem(
+                icon = Icons.Filled.PrivacyTip,
+                title = "Privacy Policy",
+                subtitle = "View our privacy policy",
+                onClick = { /* TODO: Open privacy policy */ }
+            )
+
+            HorizontalDivider()
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Logout Button
             Button(
                 onClick = { showLogoutDialog = true },
                 modifier = Modifier.fillMaxWidth(),
@@ -132,11 +171,14 @@ fun ProfileScreen(
                 title = { Text("Logout") },
                 text = { Text("Are you sure you want to logout?") },
                 confirmButton = {
-                    TextButton(
+                    Button(
                         onClick = {
                             showLogoutDialog = false
                             onLogout()
-                        }
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error
+                        )
                     ) {
                         Text("Logout")
                     }
@@ -164,7 +206,6 @@ fun ProfileHeader(
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Avatar
             Surface(
                 modifier = Modifier
                     .size(64.dp)
@@ -298,3 +339,22 @@ fun Modifier.clickableWithoutRipple(onClick: () -> Unit): Modifier {
     )
 }
 
+@Composable
+private fun calculateAudioStorage(): String {
+    val context = LocalContext.current
+    return remember {
+        try {
+            val musicDir = context.getExternalFilesDir(Environment.DIRECTORY_MUSIC)
+            val totalSize = musicDir?.walkTopDown()?.filter { it.isFile }?.sumOf { it.length() } ?: 0L
+
+            when {
+                totalSize < 1024 -> "${totalSize}B"
+                totalSize < 1024 * 1024 -> "${totalSize / 1024}KB"
+                totalSize < 1024 * 1024 * 1024 -> String.format("%.1fMB", totalSize / (1024f * 1024f))
+                else -> String.format("%.2fGB", totalSize / (1024f * 1024f * 1024f))
+            }
+        } catch (e: Exception) {
+            "Unable to calculate"
+        }
+    }
+}

@@ -7,7 +7,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.kiryusha.media.ui.screens.library.LibraryScreen
-import com.kiryusha.media.ui.screens.player.PlayerScreen
+import com.kiryusha.media.ui.screens.playlists.PlayerScreen
 import com.kiryusha.media.ui.screens.playlists.PlaylistsScreen
 import com.kiryusha.media.ui.screens.playlists.PlaylistDetailScreen
 import com.kiryusha.media.ui.screens.profile.ProfileScreen
@@ -49,8 +49,10 @@ fun AppNavigation(
                     navController.navigate(Screen.Player.route)
                 },
                 onAlbumClick = { album ->
+                    // ✅ Need to load album tracks first
                     playerViewModel.setPlaylist(
                         album.tracks.ifEmpty {
+                            // Load tracks from repository
                             emptyList()
                         },
                         0
@@ -58,9 +60,11 @@ fun AppNavigation(
                     if (album.tracks.isNotEmpty()) {
                         navController.navigate(Screen.Player.route)
                     }
-                }
+                },
+                playlistViewModel = playlistViewModel
             )
         }
+
 
 
         composable(Screen.Player.route) {
@@ -79,7 +83,6 @@ fun AppNavigation(
                     navController.navigate(Screen.PlaylistDetail.createRoute(playlistId))
                 },
                 onCreatePlaylist = {
-                    // Show create playlist dialog
                 }
             )
         }
