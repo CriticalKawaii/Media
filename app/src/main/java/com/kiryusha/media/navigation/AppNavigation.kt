@@ -49,15 +49,9 @@ fun AppNavigation(
                     navController.navigate(Screen.Player.route)
                 },
                 onAlbumClick = { album ->
-                    // ✅ Need to load album tracks first
-                    playerViewModel.setPlaylist(
-                        album.tracks.ifEmpty {
-                            // Load tracks from repository
-                            emptyList()
-                        },
-                        0
-                    )
+                    // Set the album's tracks as the current playlist
                     if (album.tracks.isNotEmpty()) {
+                        playerViewModel.setPlaylist(album.tracks, 0)
                         navController.navigate(Screen.Player.route)
                     }
                 },
