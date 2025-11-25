@@ -170,6 +170,60 @@ class PlayerViewModel(
         }
     }
 
+    fun removeTrackFromQueue(track: Track) {
+        val currentPlaylist = _playlist.value.toMutableList()
+        val trackIndex = currentPlaylist.indexOf(track)
+
+        if (trackIndex == -1) return
+
+        // Remove from player controller first
+        playerController.removeTrackFromQueue(trackIndex)
+
+        // If it's the currently playing track, it will automatically skip to next
+        // But we need to update our current track
+        if (trackIndex == _currentIndex.value) {
+            if (currentPlaylist.size > 1) {
+                // Player will move to next track
+                val nextIndex = if (trackIndex < currentPlaylist.size - 1) trackIndex else 0
+                currentPlaylist.removeAt(trackIndex)
+                _currentIndex.value = nextIndex.coerceAtMost(currentPlaylist.size - 1)
+                if (currentPlaylist.isNotEmpty()) {
+                    _currentTrack.value = currentPlaylist[_currentIndex.value]
+                }
+            } else {
+                // Last track in queue
+                _currentTrack.value = null
+            }
+        } else {
+            // Adjust current index if needed
+            if (trackIndex < _currentIndex.value) {
+                _currentIndex.value = _currentIndex.value - 1
+            }
+        }
+
+        // Remove the track from our playlist
+        currentPlaylist.removeAt(trackIndex)
+        _playlist.value = currentPlaylist
+    }
+
+    fun addTrackToQueue(track: Track) {
+        val currentPlaylist = _playlist.value.toMutableList()
+        currentPlaylist.add(track)
+        _playlist.value = currentPlaylist
+
+        // Add to player controller
+        playerController.addTrackToQueue(track)
+    }
+
+    fun addTracksToQueue(tracks: List<Track>) {
+        val currentPlaylist = _playlist.value.toMutableList()
+        currentPlaylist.addAll(tracks)
+        _playlist.value = currentPlaylist
+
+        // Add to player controller
+        playerController.addTracksToQueue(tracks)
+    }
+
     fun toggleFavorite(trackId: Long, isFavorite: Boolean) {
         viewModelScope.launch {
             try {

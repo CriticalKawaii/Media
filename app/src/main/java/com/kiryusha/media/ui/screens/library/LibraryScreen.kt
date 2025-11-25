@@ -34,6 +34,7 @@ import com.kiryusha.media.utils.TooltipManager
 import com.kiryusha.media.utils.rememberTooltipManager
 import com.kiryusha.media.viewmodels.LibraryUiState
 import com.kiryusha.media.viewmodels.LibraryViewModel
+import com.kiryusha.media.viewmodels.PlayerViewModel
 import com.kiryusha.media.viewmodels.PlaylistViewModel
 import com.kiryusha.media.viewmodels.ViewMode
 import kotlinx.coroutines.launch
@@ -42,8 +43,9 @@ import kotlinx.coroutines.launch
 @Composable
 fun LibraryScreen(
     viewModel: LibraryViewModel,
+    playerViewModel: PlayerViewModel,
     playlistViewModel: PlaylistViewModel,
-    onTrackClick: (Track) -> Unit,
+    onTrackClick: (List<Track>, Int) -> Unit,
     onAlbumClick: (Album) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -155,7 +157,13 @@ fun LibraryScreen(
                         if (searchQuery.isNotEmpty() && searchResults.isNotEmpty()) {
                             TrackListView(
                                 tracks = searchResults,
-                                onTrackClick = onTrackClick,
+                                playerViewModel = playerViewModel,
+                                onTrackClick = { track ->
+                                    val index = searchResults.indexOf(track)
+                                    if (index >= 0) {
+                                        onTrackClick(searchResults, index)
+                                    }
+                                },
                                 onTrackLongClick = { track ->
                                     showAddToPlaylistDialog = track
                                     showLongPressTooltip = true
@@ -180,7 +188,13 @@ fun LibraryScreen(
                                 ViewMode.TRACKS -> {
                                     TrackListView(
                                         tracks = tracks,
-                                        onTrackClick = onTrackClick,
+                                        playerViewModel = playerViewModel,
+                                        onTrackClick = { track ->
+                                            val index = tracks.indexOf(track)
+                                            if (index >= 0) {
+                                                onTrackClick(tracks, index)
+                                            }
+                                        },
                                         onTrackLongClick = { track ->
                                             showAddToPlaylistDialog = track
                                         }
@@ -193,7 +207,7 @@ fun LibraryScreen(
                                             // Filter tracks by artist and play them
                                             val artistTracks = tracks.filter { it.artist == artistName }
                                             if (artistTracks.isNotEmpty()) {
-                                                onTrackClick(artistTracks.first())
+                                                onTrackClick(artistTracks, 0)
                                             }
                                         }
                                     )
@@ -261,6 +275,7 @@ fun LibraryScreen(
 @Composable
 fun TrackListView(
     tracks: List<Track>,
+    playerViewModel: PlayerViewModel,
     onTrackClick: (Track) -> Unit,
     onTrackLongClick: ((Track) -> Unit)? = null
 ) {
@@ -272,6 +287,7 @@ fun TrackListView(
         items(tracks) { track ->
             SwipeableTrackItem(
                 track = track,
+                playerViewModel = playerViewModel,
                 onClick = { onTrackClick(track) },
                 onLongClick = { onTrackLongClick?.invoke(track) }
             )
@@ -283,6 +299,7 @@ fun TrackListView(
 @Composable
 fun SwipeableTrackItem(
     track: Track,
+    playerViewModel: PlayerViewModel,
     onClick: () -> Unit,
     onLongClick: (() -> Unit)? = null
 ) {
@@ -359,6 +376,16 @@ fun SwipeableTrackItem(
             expanded = showMenu,
             onDismissRequest = { showMenu = false }
         ) {
+            DropdownMenuItem(
+                text = { Text("Add to queue") },
+                onClick = {
+                    playerViewModel.addTrackToQueue(track)
+                    showMenu = false
+                },
+                leadingIcon = {
+                    Icon(Icons.Filled.PlaylistPlay, contentDescription = null)
+                }
+            )
             DropdownMenuItem(
                 text = { Text("Add to playlist") },
                 onClick = {
