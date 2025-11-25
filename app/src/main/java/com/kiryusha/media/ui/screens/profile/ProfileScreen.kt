@@ -42,6 +42,8 @@ fun ProfileScreen(
 
     var darkTheme by remember { mutableStateOf(false) }
     var showLogoutDialog by remember { mutableStateOf(false) }
+    var showSettingsDialog by remember { mutableStateOf(false) }
+    var showAboutDialog by remember { mutableStateOf(false) }
     var storageInfo by remember { mutableStateOf("Calculating...") }
 
     LaunchedEffect(userId) {
@@ -63,7 +65,7 @@ fun ProfileScreen(
             TopAppBar(
                 title = { Text("Profile") },
                 actions = {
-                    IconButton(onClick = { /* Settings */ }) {
+                    IconButton(onClick = { showSettingsDialog = true }) {
                         Icon(Icons.Filled.Settings, "Settings")
                     }
                 }
@@ -132,7 +134,13 @@ fun ProfileScreen(
                 icon = Icons.Filled.Notifications,
                 title = "Notifications",
                 subtitle = "Manage notification preferences",
-                onClick = { /* TODO: Open notifications settings */ }
+                onClick = {
+                    android.widget.Toast.makeText(
+                        context,
+                        "Notification settings coming soon",
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                }
             )
 
             HorizontalDivider()
@@ -141,7 +149,7 @@ fun ProfileScreen(
                 icon = Icons.Filled.Info,
                 title = "About",
                 subtitle = "Version 1.0.0",
-                onClick = { }
+                onClick = { showAboutDialog = true }
             )
 
             HorizontalDivider()
@@ -150,7 +158,13 @@ fun ProfileScreen(
                 icon = Icons.Filled.PrivacyTip,
                 title = "Privacy Policy",
                 subtitle = "View our privacy policy",
-                onClick = { /* TODO: Open privacy policy */ }
+                onClick = {
+                    android.widget.Toast.makeText(
+                        context,
+                        "Privacy policy will be displayed here",
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                }
             )
 
             HorizontalDivider()
@@ -191,6 +205,64 @@ fun ProfileScreen(
                 dismissButton = {
                     TextButton(onClick = { showLogoutDialog = false }) {
                         Text("Cancel")
+                    }
+                }
+            )
+        }
+
+        // Settings Dialog
+        if (showSettingsDialog) {
+            AlertDialog(
+                onDismissRequest = { showSettingsDialog = false },
+                title = { Text("Settings") },
+                text = {
+                    Column {
+                        Text("App Settings", style = MaterialTheme.typography.titleMedium)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text("• Theme: ${if (darkTheme) "Dark" else "Light"}")
+                        Text("• Version: 1.0.0")
+                        Text("• Storage: $storageInfo")
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            "Additional settings can be configured below.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { showSettingsDialog = false }) {
+                        Text("Close")
+                    }
+                }
+            )
+        }
+
+        // About Dialog
+        if (showAboutDialog) {
+            AlertDialog(
+                onDismissRequest = { showAboutDialog = false },
+                title = { Text("About Media Player") },
+                text = {
+                    Column {
+                        Text("Version 1.0.0", style = MaterialTheme.typography.bodyLarge)
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            "A modern music player for Android with playlist management, " +
+                            "favorites, and playback history tracking.",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            "© 2024 Media Player Team",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { showAboutDialog = false }) {
+                        Text("Close")
                     }
                 }
             )

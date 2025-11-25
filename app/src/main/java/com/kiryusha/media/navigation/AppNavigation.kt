@@ -70,6 +70,7 @@ fun AppNavigation(
         composable(Screen.Player.route) {
             PlayerScreen(
                 viewModel = playerViewModel,
+                playlistViewModel = playlistViewModel,
                 onBackClick = {
                     navController.navigateUp()
                 }
@@ -97,6 +98,7 @@ fun AppNavigation(
             PlaylistDetailScreen(
                 playlistId = playlistId,
                 viewModel = playlistViewModel,
+                libraryViewModel = libraryViewModel,
                 onBackClick = {
                     navController.navigateUp()
                 },

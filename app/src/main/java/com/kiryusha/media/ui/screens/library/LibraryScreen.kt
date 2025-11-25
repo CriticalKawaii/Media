@@ -288,6 +288,7 @@ fun SwipeableTrackItem(
 ) {
     var offsetX by remember { mutableStateOf(0f) }
     var showMenu by remember { mutableStateOf(false) }
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     Box {
         Row(
@@ -370,7 +371,15 @@ fun SwipeableTrackItem(
             )
             DropdownMenuItem(
                 text = { Text("Share") },
-                onClick = { showMenu = false },
+                onClick = {
+                    showMenu = false
+                    val shareIntent = android.content.Intent().apply {
+                        action = android.content.Intent.ACTION_SEND
+                        putExtra(android.content.Intent.EXTRA_TEXT, "Check out: ${track.title} by ${track.artist}")
+                        type = "text/plain"
+                    }
+                    context.startActivity(android.content.Intent.createChooser(shareIntent, "Share track"))
+                },
                 leadingIcon = {
                     Icon(Icons.Filled.Share, contentDescription = null)
                 }
