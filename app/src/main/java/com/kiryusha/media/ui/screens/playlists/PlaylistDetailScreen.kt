@@ -38,7 +38,7 @@ fun PlaylistDetailScreen(
     viewModel: PlaylistViewModel,
     libraryViewModel: com.kiryusha.media.viewmodels.LibraryViewModel,
     onBackClick: () -> Unit,
-    onTrackClick: (Track) -> Unit
+    onTrackClick: (List<Track>, Int) -> Unit
 ) {
     val currentPlaylist by viewModel.currentPlaylist.collectAsState()
     val uiState by viewModel.uiState.collectAsState()
@@ -147,7 +147,7 @@ fun PlaylistDetailScreen(
                                                 track = track,
                                                 position = index + 1,
                                                 isDragging = isDragging,
-                                                onClick = { onTrackClick(track) },
+                                                onClick = { onTrackClick(tracks, index) },
                                                 onRemove = {
                                                     viewModel.removeTrackFromPlaylist(playlistId, track.trackId)
                                                 },
