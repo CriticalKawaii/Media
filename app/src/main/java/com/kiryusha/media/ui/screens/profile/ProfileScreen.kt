@@ -48,11 +48,10 @@ fun ProfileScreen(
             darkTheme = isDark
         }
     }
-    /*
-        LaunchedEffect(Unit) {
-            storageInfo = calculateAudioStorage()
-        }
-    */
+
+    LaunchedEffect(Unit) {
+        storageInfo = calculateAudioStorage()
+    }
     Scaffold(
         topBar = {
             TopAppBar(

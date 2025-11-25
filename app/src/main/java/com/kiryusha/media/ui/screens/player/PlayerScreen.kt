@@ -167,9 +167,8 @@ fun PlayerScreen(
                         IconButton(onClick = { /* Add to playlist */ }) {
                             Icon(Icons.Filled.Add, "Add to playlist")
                         }
-                        /* unresolved toggleFavorite
                         IconButton(onClick = {
-                            viewModel.toggleFavorite(track.trackId, !track.isFavorite)
+                            viewModel.toggleFavorite(track.trackId, track.isFavorite)
                         }) {
                             Icon(
                                 if (track.isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
@@ -177,7 +176,6 @@ fun PlayerScreen(
                                 tint = if (track.isFavorite) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
                             )
                         }
-                        */
                     }
                 }
             } ?: run {

@@ -170,6 +170,22 @@ class PlayerViewModel(
         }
     }
 
+    fun toggleFavorite(trackId: Long, isFavorite: Boolean) {
+        viewModelScope.launch {
+            try {
+                musicRepository.toggleFavorite(trackId, !isFavorite)
+                // Update current track if it's the one being favorited
+                _currentTrack.value?.let { track ->
+                    if (track.trackId == trackId) {
+                        _currentTrack.value = track.copy(isFavorite = !isFavorite)
+                    }
+                }
+            } catch (e: Exception) {
+                // Handle error silently for now
+            }
+        }
+    }
+
     private fun setupPlayerListener() {
         viewModelScope.launch {
             playerController.isPlaying.collect { playing ->
