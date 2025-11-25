@@ -35,15 +35,18 @@ import org.burnoutcrew.reorderable.reorderable
 fun PlaylistDetailScreen(
     playlistId: Long,
     viewModel: PlaylistViewModel,
+    libraryViewModel: com.kiryusha.media.viewmodels.LibraryViewModel,
     onBackClick: () -> Unit,
     onTrackClick: (Track) -> Unit
 ) {
     val currentPlaylist by viewModel.currentPlaylist.collectAsState()
     val uiState by viewModel.uiState.collectAsState()
+    val allTracks by libraryViewModel.allTracks.collectAsState()
 
     var tracks by remember { mutableStateOf<List<Track>>(emptyList()) }
     var showEditDialog by remember { mutableStateOf(false) }
     var showDeleteConfirmation by remember { mutableStateOf(false) }
+    var showAddTracksDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(playlistId) {
         viewModel.loadPlaylist(playlistId)
@@ -84,7 +87,7 @@ fun PlaylistDetailScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { /* Add tracks */ }
+                onClick = { showAddTracksDialog = true }
             ) {
                 Icon(Icons.Filled.Add, "Add tracks")
             }
@@ -203,6 +206,18 @@ fun PlaylistDetailScreen(
                     TextButton(onClick = { showDeleteConfirmation = false }) {
                         Text("Cancel")
                     }
+                }
+            )
+        }
+
+        // Add Tracks Dialog
+        if (showAddTracksDialog) {
+            AddTracksToPlaylistDialog(
+                allTracks = allTracks,
+                currentTracks = tracks,
+                onDismiss = { showAddTracksDialog = false },
+                onAddTrack = { track ->
+                    viewModel.addTrackToPlaylist(playlistId, track.trackId)
                 }
             )
         }
@@ -479,4 +494,161 @@ fun EditPlaylistDialog(
             }
         }
     )
+}
+
+@Composable
+fun AddTracksToPlaylistDialog(
+    allTracks: List<Track>,
+    currentTracks: List<Track>,
+    onDismiss: () -> Unit,
+    onAddTrack: (Track) -> Unit
+) {
+    val currentTrackIds = remember(currentTracks) { currentTracks.map { it.trackId }.toSet() }
+    val availableTracks = remember(allTracks, currentTrackIds) {
+        allTracks.filter { it.trackId !in currentTrackIds }
+    }
+    var searchQuery by remember { mutableStateOf("") }
+    val filteredTracks = remember(availableTracks, searchQuery) {
+        if (searchQuery.isBlank()) {
+            availableTracks
+        } else {
+            availableTracks.filter {
+                it.title.contains(searchQuery, ignoreCase = true) ||
+                it.artist.contains(searchQuery, ignoreCase = true) ||
+                it.album.contains(searchQuery, ignoreCase = true)
+            }
+        }
+    }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.8f),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Column(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                // Header
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Add Tracks",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Filled.Close, "Close")
+                    }
+                }
+
+                // Search bar
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    placeholder = { Text("Search tracks...") },
+                    leadingIcon = {
+                        Icon(Icons.Filled.Search, "Search")
+                    },
+                    singleLine = true
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                HorizontalDivider()
+
+                // Track list
+                if (availableTracks.isEmpty()) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                Icons.Filled.MusicNote,
+                                "No tracks",
+                                modifier = Modifier.size(48.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text("All tracks are already in this playlist")
+                        }
+                    }
+                } else if (filteredTracks.isEmpty()) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("No tracks found")
+                    }
+                } else {
+                    LazyColumn(
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(filteredTracks) { track ->
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        onAddTrack(track)
+                                        onDismiss()
+                                    }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    AsyncImage(
+                                        model = track.albumArtUri,
+                                        contentDescription = track.title,
+                                        modifier = Modifier
+                                            .size(48.dp)
+                                            .clip(RoundedCornerShape(4.dp)),
+                                        contentScale = ContentScale.Crop
+                                    )
+
+                                    Spacer(modifier = Modifier.width(12.dp))
+
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = track.title,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.Medium,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+
+                                        Text(
+                                            text = "${track.artist} • ${track.album}",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
+
+                                    IconButton(onClick = {
+                                        onAddTrack(track)
+                                        onDismiss()
+                                    }) {
+                                        Icon(Icons.Filled.Add, "Add track")
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

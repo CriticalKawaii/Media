@@ -9,7 +9,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.items as lazyItems
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -29,6 +29,8 @@ import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.kiryusha.media.database.entities.PlaylistWithTracks
+import com.kiryusha.media.database.entities.Track
+import com.kiryusha.media.ui.screens.library.AddToPlaylistDialog
 import com.kiryusha.media.viewmodels.PlayerViewModel
 import com.kiryusha.media.viewmodels.PlaylistUiState
 import com.kiryusha.media.viewmodels.PlaylistViewModel
@@ -39,6 +41,7 @@ import kotlin.math.abs
 @Composable
 fun PlayerScreen(
     viewModel: PlayerViewModel,
+    playlistViewModel: PlaylistViewModel = viewModel(),
     onBackClick: () -> Unit
 ) {
     val currentTrack by viewModel.currentTrack.collectAsState()
@@ -47,9 +50,13 @@ fun PlayerScreen(
     val currentPosition by viewModel.currentPosition.collectAsState()
     val shuffleEnabled by viewModel.shuffleEnabled.collectAsState()
     val repeatMode by viewModel.repeatMode.collectAsState()
+    val playlist by viewModel.playlist.collectAsState()
+    val playlists by playlistViewModel.userPlaylists.collectAsState()
 
     var offsetX by remember { mutableStateOf(0f) }
     var showExpandedArt by remember { mutableStateOf(false) }
+    var showAddToPlaylistDialog by remember { mutableStateOf(false) }
+    var showQueueDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
     Scaffold(
@@ -74,7 +81,7 @@ fun PlayerScreen(
                     }) {
                         Icon(Icons.Filled.Share, "Share")
                     }
-                    IconButton(onClick = { /* Queue */ }) {
+                    IconButton(onClick = { showQueueDialog = true }) {
                         Icon(Icons.Filled.PlaylistPlay, "Queue")
                     }
                 }
@@ -164,7 +171,9 @@ fun PlayerScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
-                        IconButton(onClick = { /* Add to playlist */ }) {
+                        IconButton(onClick = {
+                            currentTrack?.let { showAddToPlaylistDialog = true }
+                        }) {
                             Icon(Icons.Filled.Add, "Add to playlist")
                         }
                         IconButton(onClick = {
@@ -204,6 +213,40 @@ fun PlayerScreen(
             ExpandedAlbumArtDialog(
                 albumArtUri = currentTrack?.albumArtUri,
                 onDismiss = { showExpandedArt = false }
+            )
+        }
+
+        // Add to Playlist Dialog
+        if (showAddToPlaylistDialog && currentTrack != null) {
+            AddToPlaylistDialog(
+                track = currentTrack!!,
+                playlists = playlists,
+                onDismiss = { showAddToPlaylistDialog = false },
+                onAddToPlaylist = { playlistId ->
+                    playlistViewModel.addTrackToPlaylist(playlistId, currentTrack!!.trackId)
+                    showAddToPlaylistDialog = false
+                },
+                onCreateNewPlaylist = {
+                    // Could add create playlist flow here
+                    showAddToPlaylistDialog = false
+                }
+            )
+        }
+
+        // Queue Dialog
+        if (showQueueDialog) {
+            QueueDialog(
+                playlist = playlist,
+                currentTrack = currentTrack,
+                onDismiss = { showQueueDialog = false },
+                onTrackClick = { track ->
+                    val index = playlist.indexOf(track)
+                    if (index >= 0) {
+                        viewModel.setPlaylist(playlist, index)
+                        viewModel.playTrack(track)
+                    }
+                    showQueueDialog = false
+                }
             )
         }
     }
@@ -457,4 +500,146 @@ fun formatTime(millis: Long): String {
     val minutes = totalSeconds / 60
     val seconds = totalSeconds % 60
     return String.format("%d:%02d", minutes, seconds)
+}
+
+@Composable
+fun QueueDialog(
+    playlist: List<Track>,
+    currentTrack: Track?,
+    onDismiss: () -> Unit,
+    onTrackClick: (Track) -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.8f),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Column(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                // Header
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Queue (${playlist.size} tracks)",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Filled.Close, "Close")
+                    }
+                }
+
+                HorizontalDivider()
+
+                // Track list
+                if (playlist.isEmpty()) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                Icons.Filled.MusicNote,
+                                "Empty queue",
+                                modifier = Modifier.size(48.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text("No tracks in queue")
+                        }
+                    }
+                } else {
+                    LazyColumn(
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(playlist.size) { index ->
+                            val track = playlist[index]
+                            val isCurrentTrack = track.trackId == currentTrack?.trackId
+
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { onTrackClick(track) },
+                                colors = CardDefaults.cardColors(
+                                    containerColor = if (isCurrentTrack)
+                                        MaterialTheme.colorScheme.primaryContainer
+                                    else
+                                        MaterialTheme.colorScheme.surface
+                                )
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "${index + 1}",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = if (isCurrentTrack)
+                                            MaterialTheme.colorScheme.primary
+                                        else
+                                            MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.width(32.dp)
+                                    )
+
+                                    AsyncImage(
+                                        model = track.albumArtUri,
+                                        contentDescription = track.title,
+                                        modifier = Modifier
+                                            .size(48.dp)
+                                            .clip(RoundedCornerShape(4.dp)),
+                                        contentScale = ContentScale.Crop
+                                    )
+
+                                    Spacer(modifier = Modifier.width(12.dp))
+
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = track.title,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = if (isCurrentTrack) FontWeight.Bold else FontWeight.Medium,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                            color = if (isCurrentTrack)
+                                                MaterialTheme.colorScheme.primary
+                                            else
+                                                MaterialTheme.colorScheme.onSurface
+                                        )
+
+                                        Text(
+                                            text = track.artist,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = if (isCurrentTrack)
+                                                MaterialTheme.colorScheme.onPrimaryContainer
+                                            else
+                                                MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
+
+                                    if (isCurrentTrack) {
+                                        Icon(
+                                            Icons.Filled.PlayArrow,
+                                            "Now playing",
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
