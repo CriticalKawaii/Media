@@ -102,8 +102,8 @@ fun AppNavigation(
                 onBackClick = {
                     navController.navigateUp()
                 },
-                onTrackClick = { track ->
-                    playerViewModel.playTrack(track)
+                onTrackClick = { tracks, startIndex ->
+                    playerViewModel.setPlaylist(tracks, startIndex)
                     navController.navigate(Screen.Player.route)
                 }
             )
