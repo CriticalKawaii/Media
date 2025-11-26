@@ -87,5 +87,15 @@ class MusicRepository(
             uniqueTracksPlayed = historyDao.getUniqueTracksPlayed(userId)
         )
     }
+
+    suspend fun deleteTrack(track: Track) {
+        trackDao.deleteTrack(track)
+    }
+
+    suspend fun deleteTracks(tracks: List<Track>) {
+        tracks.forEach { track ->
+            trackDao.deleteTrack(track)
+        }
+    }
 }
 
