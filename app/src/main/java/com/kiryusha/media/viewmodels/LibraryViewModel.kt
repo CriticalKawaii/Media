@@ -24,6 +24,9 @@ class LibraryViewModel(
     private val _viewMode = MutableStateFlow(ViewMode.TRACKS)
     val viewMode: StateFlow<ViewMode> = _viewMode.asStateFlow()
 
+    private var currentUserId: Int = -1
+    private val _userIdFlow = MutableStateFlow(-1)
+
     val allTracks: StateFlow<List<Track>> = musicRepository.getAllTracks()
         .stateIn(
             scope = viewModelScope,
@@ -31,7 +34,14 @@ class LibraryViewModel(
             initialValue = emptyList()
         )
 
-    val favoriteTracks: StateFlow<List<Track>> = musicRepository.getFavoriteTracks()
+    val favoriteTracks: StateFlow<List<Track>> = _userIdFlow
+        .flatMapLatest { userId ->
+            if (userId == -1) {
+                flowOf(emptyList())
+            } else {
+                musicRepository.getFavoriteTracks(userId)
+            }
+        }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
@@ -65,6 +75,11 @@ class LibraryViewModel(
 
     init {
         loadLibrary()
+    }
+
+    fun setUserId(userId: Int) {
+        currentUserId = userId
+        _userIdFlow.value = userId
     }
 
     fun scanMediaFiles() {
@@ -157,9 +172,10 @@ class LibraryViewModel(
     }
 
     fun toggleFavorite(trackId: Long, isFavorite: Boolean) {
+        if (currentUserId == -1) return
         viewModelScope.launch {
             try {
-                musicRepository.toggleFavorite(trackId, isFavorite)
+                musicRepository.toggleFavorite(currentUserId, trackId, isFavorite)
             } catch (e: Exception) {
                 _uiState.value = LibraryUiState.Error("Error updating favorite")
             }
@@ -347,15 +363,10 @@ class EnhancedPlayerViewModel(
     }
 
     fun toggleFavorite(trackId: Long, isFavorite: Boolean) {
+        if (userId == -1) return
         viewModelScope.launch {
             try {
-                musicRepository.toggleFavorite(trackId, !isFavorite)
-                // Update current track if it's the one being favorited
-                _currentTrack.value?.let { track ->
-                    if (track.trackId == trackId) {
-                        _currentTrack.value = track.copy(isFavorite = !isFavorite)
-                    }
-                }
+                musicRepository.toggleFavorite(userId, trackId, !isFavorite)
             } catch (e: Exception) {
                 // Handle error
             }

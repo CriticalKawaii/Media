@@ -35,10 +35,7 @@ data class Track(
     val dateAdded: Long = System.currentTimeMillis(),
 
     @ColumnInfo(name = "play_count")
-    val playCount: Int = 0,
-
-    @ColumnInfo(name = "is_favorite")
-    val isFavorite: Boolean = false
+    val playCount: Int = 0
 ) {
     fun getDurationFormatted(): String {
         val totalSeconds = durationMs / 1000

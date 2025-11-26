@@ -53,6 +53,7 @@ fun PlayerScreen(
     val repeatMode by viewModel.repeatMode.collectAsState()
     val playlist by viewModel.playlist.collectAsState()
     val playlists by playlistViewModel.userPlaylists.collectAsState()
+    val isCurrentTrackFavorite by viewModel.isCurrentTrackFavorite.collectAsState()
 
     var offsetX by remember { mutableStateOf(0f) }
     var offsetY by remember { mutableStateOf(0f) }
@@ -199,12 +200,12 @@ fun PlayerScreen(
                             Icon(Icons.Filled.Add, "Add to playlist")
                         }
                         IconButton(onClick = {
-                            viewModel.toggleFavorite(track.trackId, track.isFavorite)
+                            viewModel.toggleFavorite(track.trackId, isCurrentTrackFavorite)
                         }) {
                             Icon(
-                                if (track.isFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                                if (isCurrentTrackFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
                                 "Favorite",
-                                tint = if (track.isFavorite) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+                                tint = if (isCurrentTrackFavorite) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
                             )
                         }
                     }

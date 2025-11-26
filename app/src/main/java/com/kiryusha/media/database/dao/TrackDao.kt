@@ -20,9 +20,6 @@ interface TrackDao {
     @Query("SELECT * FROM tracks WHERE artist = :artistName ORDER BY album, title")
     fun getTracksByArtist(artistName: String): Flow<List<Track>>
 
-    @Query("SELECT * FROM tracks WHERE is_favorite = 1 ORDER BY date_added DESC")
-    fun getFavoriteTracks(): Flow<List<Track>>
-
     @Query("""
         SELECT * FROM tracks 
         WHERE title LIKE '%' || :query || '%' 
@@ -37,9 +34,6 @@ interface TrackDao {
 
     @Query("SELECT DISTINCT artist FROM tracks ORDER BY artist")
     suspend fun getAllArtists(): List<String>
-
-    @Query("UPDATE tracks SET is_favorite = :isFavorite WHERE trackId = :trackId")
-    suspend fun updateFavoriteStatus(trackId: Long, isFavorite: Boolean)
 
     @Query("UPDATE tracks SET play_count = play_count + 1 WHERE trackId = :trackId")
     suspend fun incrementPlayCount(trackId: Long)
