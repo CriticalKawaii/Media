@@ -80,13 +80,15 @@ class MainActivity : ComponentActivity() {
             var currentUserId by remember { mutableStateOf(-1) }
 
             LaunchedEffect(Unit) {
-                val userId = appPreferences.getUserId().first() ?: -1
-                currentUserId = userId
-                if (userId != -1) {
-                    playerViewModel.setUserId(userId)
-                    playlistViewModel.setUserId(userId)
-                    libraryViewModel.setUserId(userId)
-                    profileViewModel.loadUserProfile(userId)
+                appPreferences.getUserId().collect { userId ->
+                    val id = userId ?: -1
+                    currentUserId = id
+                    if (id != -1) {
+                        playerViewModel.setUserId(id)
+                        playlistViewModel.setUserId(id)
+                        libraryViewModel.setUserId(id)
+                        profileViewModel.loadUserProfile(id)
+                    }
                 }
             }
 
