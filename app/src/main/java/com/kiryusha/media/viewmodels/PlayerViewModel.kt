@@ -69,12 +69,17 @@ class PlayerViewModel(
         userId = id
         // Re-check favorite status for current track when user changes
         viewModelScope.launch {
-            _currentTrack.value?.let { track ->
-                if (id != -1) {
-                    _isCurrentTrackFavorite.value = musicRepository.isFavorite(id, track.trackId)
-                } else {
-                    _isCurrentTrackFavorite.value = false
+            try {
+                _currentTrack.value?.let { track ->
+                    if (id != -1) {
+                        _isCurrentTrackFavorite.value = musicRepository.isFavorite(id, track.trackId)
+                    } else {
+                        _isCurrentTrackFavorite.value = false
+                    }
                 }
+            } catch (e: Exception) {
+                // If favorite status check fails, default to false
+                _isCurrentTrackFavorite.value = false
             }
         }
     }
@@ -87,16 +92,27 @@ class PlayerViewModel(
             _playerState.value = PlayerState.Playing
 
             // Check if track is favorite
-            if (userId != -1) {
-                _isCurrentTrackFavorite.value = musicRepository.isFavorite(userId, track.trackId)
+            try {
+                if (userId != -1) {
+                    _isCurrentTrackFavorite.value = musicRepository.isFavorite(userId, track.trackId)
+                } else {
+                    _isCurrentTrackFavorite.value = false
+                }
+            } catch (e: Exception) {
+                // If favorite status check fails, default to false
+                _isCurrentTrackFavorite.value = false
             }
 
             // Play through controller
             playerController.playTrack(track)
 
             // Record play in history
-            if (userId != -1) {
-                musicRepository.recordPlay(track.trackId, userId)
+            try {
+                if (userId != -1) {
+                    musicRepository.recordPlay(track.trackId, userId)
+                }
+            } catch (e: Exception) {
+                // Silently ignore playback recording errors
             }
         }
     }
@@ -112,9 +128,14 @@ class PlayerViewModel(
             _currentTrack.value = tracks[startIndex]
             // Check favorite status for initial track
             viewModelScope.launch {
-                if (userId != -1) {
-                    _isCurrentTrackFavorite.value = musicRepository.isFavorite(userId, tracks[startIndex].trackId)
-                } else {
+                try {
+                    if (userId != -1) {
+                        _isCurrentTrackFavorite.value = musicRepository.isFavorite(userId, tracks[startIndex].trackId)
+                    } else {
+                        _isCurrentTrackFavorite.value = false
+                    }
+                } catch (e: Exception) {
+                    // If favorite status check fails, default to false
                     _isCurrentTrackFavorite.value = false
                 }
             }
