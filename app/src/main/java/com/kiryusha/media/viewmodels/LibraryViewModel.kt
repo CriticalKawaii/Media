@@ -57,6 +57,12 @@ class LibraryViewModel(
     private val _albums = MutableStateFlow<List<Album>>(emptyList())
     val albums: StateFlow<List<Album>> = _albums.asStateFlow()
 
+    private val _availableTracks = MutableStateFlow<List<Track>>(emptyList())
+    val availableTracks: StateFlow<List<Track>> = _availableTracks.asStateFlow()
+
+    private val _showTrackSelection = MutableStateFlow(false)
+    val showTrackSelection: StateFlow<Boolean> = _showTrackSelection.asStateFlow()
+
     init {
         loadLibrary()
     }
@@ -69,14 +75,45 @@ class LibraryViewModel(
                 if (tracks.isEmpty()) {
                     _uiState.value = LibraryUiState.Empty
                 } else {
-                    musicRepository.importTracks(tracks)
-                    _uiState.value = LibraryUiState.Success("Found ${tracks.size} tracks")
-                    loadAlbums()
+                    // Get existing track file paths to filter out duplicates
+                    val existingPaths = allTracks.value.map { it.filePath }.toSet()
+                    val newTracks = tracks.filter { it.filePath !in existingPaths }
+
+                    if (newTracks.isEmpty()) {
+                        _uiState.value = LibraryUiState.Success("All tracks are already in your library")
+                    } else {
+                        _availableTracks.value = newTracks
+                        _showTrackSelection.value = true
+                        _uiState.value = LibraryUiState.Success("Found ${newTracks.size} new tracks")
+                    }
                 }
             } catch (e: Exception) {
                 _uiState.value = LibraryUiState.Error("Scanning failed: ${e.message}")
             }
         }
+    }
+
+    fun importSelectedTracks(selectedTracks: List<Track>) {
+        viewModelScope.launch {
+            _uiState.value = LibraryUiState.Loading
+            try {
+                if (selectedTracks.isNotEmpty()) {
+                    musicRepository.importTracks(selectedTracks)
+                    _uiState.value = LibraryUiState.Success("Added ${selectedTracks.size} tracks to library")
+                    loadAlbums()
+                }
+                _showTrackSelection.value = false
+                _availableTracks.value = emptyList()
+            } catch (e: Exception) {
+                _uiState.value = LibraryUiState.Error("Import failed: ${e.message}")
+            }
+        }
+    }
+
+    fun cancelTrackSelection() {
+        _showTrackSelection.value = false
+        _availableTracks.value = emptyList()
+        _uiState.value = LibraryUiState.Loaded(allTracks.value.size)
     }
 
     fun loadLibrary() {
