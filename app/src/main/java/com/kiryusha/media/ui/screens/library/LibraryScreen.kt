@@ -92,12 +92,27 @@ fun LibraryScreen(
                 SearchBar(
                     query = searchQuery,
                     onQueryChange = { viewModel.setSearchQuery(it) },
-                    onSearch = { active = false },
-                    active = active,
-                    onActiveChange = { active = it },
-                    placeholder = { Text("Search...") }
+                    onSearch = { },
+                    active = false,
+                    onActiveChange = { },
+                    placeholder = { Text("Search...") },
+                    leadingIcon = {
+                        IconButton(onClick = {
+                            showSearchBar = false
+                            viewModel.setSearchQuery("")
+                        }) {
+                            Icon(Icons.Filled.ArrowBack, "Close search")
+                        }
+                    },
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { viewModel.setSearchQuery("") }) {
+                                Icon(Icons.Filled.Close, "Clear search")
+                            }
+                        }
+                    }
                 ) {
-
+                    // Content not used since active is always false
                 }
             } else {
                 TopAppBar(
@@ -170,7 +185,7 @@ fun LibraryScreen(
                             }
 
                             IconButton(onClick = { viewModel.scanMediaFiles() }) {
-                                Icon(Icons.Filled.Refresh, "Scan Media")
+                                Icon(Icons.Filled.Add, "Scan Media")
                             }
                         }
                     }

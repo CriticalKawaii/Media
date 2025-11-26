@@ -21,7 +21,7 @@ class LibraryViewModel(
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
-    private val _viewMode = MutableStateFlow(ViewMode.ALBUMS)
+    private val _viewMode = MutableStateFlow(ViewMode.TRACKS)
     val viewMode: StateFlow<ViewMode> = _viewMode.asStateFlow()
 
     val allTracks: StateFlow<List<Track>> = musicRepository.getAllTracks()
