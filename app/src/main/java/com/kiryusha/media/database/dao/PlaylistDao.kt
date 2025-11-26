@@ -16,6 +16,16 @@ interface PlaylistDao {
     suspend fun getPlaylistById(playlistId: Long): Playlist?
 
     @Transaction
+    @Query("""
+        SELECT tracks.*
+        FROM tracks
+        INNER JOIN playlist_tracks ON tracks.trackId = playlist_tracks.trackId
+        WHERE playlist_tracks.playlistId = :playlistId
+        ORDER BY playlist_tracks.position ASC
+    """)
+    suspend fun getPlaylistTracksOrdered(playlistId: Long): List<Track>
+
+    @Transaction
     @Query("SELECT * FROM playlists WHERE playlistId = :playlistId")
     suspend fun getPlaylistWithTracks(playlistId: Long): PlaylistWithTracks?
 
@@ -54,10 +64,24 @@ interface PlaylistDao {
     suspend fun getMaxPosition(playlistId: Long): Int?
 
     @Query("""
-        SELECT COUNT(*) FROM playlist_tracks 
+        SELECT COUNT(*) FROM playlist_tracks
         WHERE playlistId = :playlistId
     """)
     suspend fun getPlaylistTrackCount(playlistId: Long): Int
+
+    @Query("""
+        UPDATE playlist_tracks
+        SET position = :position
+        WHERE playlistId = :playlistId AND trackId = :trackId
+    """)
+    suspend fun updateTrackPosition(playlistId: Long, trackId: Long, position: Int)
+
+    @Transaction
+    suspend fun updateTrackPositions(playlistId: Long, trackIds: List<Long>) {
+        trackIds.forEachIndexed { index, trackId ->
+            updateTrackPosition(playlistId, trackId, index)
+        }
+    }
 
     @Transaction
     suspend fun addTrackToPlaylist(playlistId: Long, trackId: Long) {

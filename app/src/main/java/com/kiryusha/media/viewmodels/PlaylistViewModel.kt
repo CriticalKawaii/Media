@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kiryusha.media.database.entities.Playlist
 import com.kiryusha.media.database.entities.PlaylistWithTracks
+import com.kiryusha.media.database.entities.Track
 import com.kiryusha.media.repository.PlaylistRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -17,6 +18,9 @@ class PlaylistViewModel(
 
     private val _currentPlaylist = MutableStateFlow<PlaylistWithTracks?>(null)
     val currentPlaylist: StateFlow<PlaylistWithTracks?> = _currentPlaylist.asStateFlow()
+
+    private val _currentPlaylistTracks = MutableStateFlow<List<Track>>(emptyList())
+    val currentPlaylistTracks: StateFlow<List<Track>> = _currentPlaylistTracks.asStateFlow()
 
     private var currentUserId: Int = -1
 
@@ -69,7 +73,9 @@ class PlaylistViewModel(
             _uiState.value = PlaylistUiState.Loading
             try {
                 val playlist = playlistRepository.getPlaylistWithTracks(playlistId)
+                val orderedTracks = playlistRepository.getPlaylistTracksOrdered(playlistId)
                 _currentPlaylist.value = playlist
+                _currentPlaylistTracks.value = orderedTracks
                 _uiState.value = if (playlist != null) {
                     PlaylistUiState.PlaylistLoaded(playlist)
                 } else {
@@ -133,6 +139,16 @@ class PlaylistViewModel(
                 loadPlaylist(playlist.playlistId)
             } catch (e: Exception) {
                 _uiState.value = PlaylistUiState.Error("Ошибка обновления: ${e.message}")
+            }
+        }
+    }
+
+    fun updateTrackPositions(playlistId: Long, trackIds: List<Long>) {
+        viewModelScope.launch {
+            try {
+                playlistRepository.updateTrackPositions(playlistId, trackIds)
+            } catch (e: Exception) {
+                _uiState.value = PlaylistUiState.Error("Ошибка обновления порядка: ${e.message}")
             }
         }
     }

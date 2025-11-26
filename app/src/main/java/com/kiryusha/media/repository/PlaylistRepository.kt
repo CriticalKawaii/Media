@@ -3,6 +3,7 @@ package com.kiryusha.media.repository
 import com.kiryusha.media.database.dao.PlaylistDao
 import com.kiryusha.media.database.entities.Playlist
 import com.kiryusha.media.database.entities.PlaylistWithTracks
+import com.kiryusha.media.database.entities.Track
 import kotlinx.coroutines.flow.Flow
 
 class PlaylistRepository(private val playlistDao: PlaylistDao) {
@@ -18,6 +19,9 @@ class PlaylistRepository(private val playlistDao: PlaylistDao) {
 
     suspend fun getPlaylistWithTracks(playlistId: Long): PlaylistWithTracks? =
         playlistDao.getPlaylistWithTracks(playlistId)
+
+    suspend fun getPlaylistTracksOrdered(playlistId: Long) =
+        playlistDao.getPlaylistTracksOrdered(playlistId)
 
     suspend fun createPlaylist(playlist: Playlist): Long {
         return playlistDao.insertPlaylist(playlist)
@@ -45,4 +49,8 @@ class PlaylistRepository(private val playlistDao: PlaylistDao) {
 
     suspend fun getPlaylistTrackCount(playlistId: Long): Int =
         playlistDao.getPlaylistTrackCount(playlistId)
+
+    suspend fun updateTrackPositions(playlistId: Long, trackIds: List<Long>) {
+        playlistDao.updateTrackPositions(playlistId, trackIds)
+    }
 }
