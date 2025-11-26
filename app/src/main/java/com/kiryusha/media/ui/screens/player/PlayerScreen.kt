@@ -7,6 +7,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items as lazyItems
@@ -54,6 +55,7 @@ fun PlayerScreen(
     val playlists by playlistViewModel.userPlaylists.collectAsState()
 
     var offsetX by remember { mutableStateOf(0f) }
+    var offsetY by remember { mutableStateOf(0f) }
     var showExpandedArt by remember { mutableStateOf(false) }
     var showAddToPlaylistDialog by remember { mutableStateOf(false) }
     var showQueueDialog by remember { mutableStateOf(false) }
@@ -92,6 +94,26 @@ fun PlayerScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .pointerInput(Unit) {
+                    detectVerticalDragGestures(
+                        onDragEnd = {
+                            if (offsetY > 200) {
+                                onBackClick()
+                            }
+                            offsetY = 0f
+                        },
+                        onVerticalDrag = { change, dragAmount ->
+                            if (dragAmount > 0) { // Only allow downward swipes
+                                change.consume()
+                                offsetY = (offsetY + dragAmount).coerceAtLeast(0f)
+                            }
+                        }
+                    )
+                }
+                .graphicsLayer {
+                    translationY = offsetY
+                    alpha = 1f - (offsetY / 1000f).coerceIn(0f, 0.5f)
+                }
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(

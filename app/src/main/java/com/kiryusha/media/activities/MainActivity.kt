@@ -28,6 +28,7 @@ import com.kiryusha.media.navigation.Screen
 import com.kiryusha.media.repository.MusicRepository
 import com.kiryusha.media.repository.PlaylistRepository
 import com.kiryusha.media.repository.UserRepository
+import com.kiryusha.media.ui.components.MiniPlayer
 import com.kiryusha.media.ui.theme.MediaTheme
 import com.kiryusha.media.utils.AppPreferences
 import com.kiryusha.media.utils.MediaScanner
@@ -147,35 +148,46 @@ fun MainScreen(
     onLogout: () -> Unit
 ) {
     val navController = rememberNavController()
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentDestination = navBackStackEntry?.destination
 
     Scaffold(
         bottomBar = {
-            NavigationBar {
-                val navBackStackEntry by navController.currentBackStackEntryAsState()
-                val currentDestination = navBackStackEntry?.destination
-
-                val items = listOf(
-                    BottomNavItem("Library", Screen.Library.route, Icons.Filled.Home),
-                    BottomNavItem("Playlists", Screen.Playlists.route, Icons.Filled.List),
-                    BottomNavItem("Player", Screen.Player.route, Icons.Filled.PlayArrow),
-                    BottomNavItem("Profile", Screen.Profile.route, Icons.Filled.Person)
+            Column {
+                // MiniPlayer above bottom navigation
+                MiniPlayer(
+                    onNavigateToPlayer = {
+                        navController.navigate(Screen.Player.route) {
+                            launchSingleTop = true
+                        }
+                    },
+                    playerViewModel = playerViewModel
                 )
 
-                items.forEach { item ->
-                    NavigationBarItem(
-                        icon = { Icon(item.icon, contentDescription = item.title) },
-                        label = { Text(item.title) },
-                        selected = currentDestination?.hierarchy?.any { it.route == item.route } == true,
-                        onClick = {
-                            navController.navigate(item.route) {
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
-                                }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        }
+                // Bottom Navigation Bar (without Player tab)
+                NavigationBar {
+                    val items = listOf(
+                        BottomNavItem("Library", Screen.Library.route, Icons.Filled.Home),
+                        BottomNavItem("Playlists", Screen.Playlists.route, Icons.Filled.List),
+                        BottomNavItem("Profile", Screen.Profile.route, Icons.Filled.Person)
                     )
+
+                    items.forEach { item ->
+                        NavigationBarItem(
+                            icon = { Icon(item.icon, contentDescription = item.title) },
+                            label = { Text(item.title) },
+                            selected = currentDestination?.hierarchy?.any { it.route == item.route } == true,
+                            onClick = {
+                                navController.navigate(item.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
+                            }
+                        )
+                    }
                 }
             }
         }
