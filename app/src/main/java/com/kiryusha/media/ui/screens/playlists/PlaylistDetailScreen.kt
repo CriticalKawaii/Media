@@ -41,6 +41,7 @@ fun PlaylistDetailScreen(
     onTrackClick: (List<Track>, Int) -> Unit
 ) {
     val currentPlaylist by viewModel.currentPlaylist.collectAsState()
+    val orderedTracks by viewModel.currentPlaylistTracks.collectAsState()
     val uiState by viewModel.uiState.collectAsState()
     val allTracks by libraryViewModel.allTracks.collectAsState()
 
@@ -53,10 +54,8 @@ fun PlaylistDetailScreen(
         viewModel.loadPlaylist(playlistId)
     }
 
-    LaunchedEffect(currentPlaylist) {
-        currentPlaylist?.let {
-            tracks = it.tracks
-        }
+    LaunchedEffect(orderedTracks) {
+        tracks = orderedTracks
     }
 
     val reorderableState = rememberReorderableLazyListState(
@@ -64,6 +63,9 @@ fun PlaylistDetailScreen(
             tracks = tracks.toMutableList().apply {
                 add(to.index, removeAt(from.index))
             }
+            // Persist the new order to database
+            val trackIds = tracks.map { it.trackId }
+            viewModel.updateTrackPositions(playlistId, trackIds)
         }
     )
 
