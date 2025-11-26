@@ -36,6 +36,7 @@ import com.kiryusha.media.viewmodels.LibraryViewModel
 import com.kiryusha.media.viewmodels.PlayerViewModel
 import com.kiryusha.media.viewmodels.PlaylistViewModel
 import com.kiryusha.media.viewmodels.ProfileViewModel
+import com.kiryusha.media.viewmodels.SettingsViewModel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -45,6 +46,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var playerViewModel: PlayerViewModel
     private lateinit var playlistViewModel: PlaylistViewModel
     private lateinit var profileViewModel: ProfileViewModel
+    private lateinit var settingsViewModel: SettingsViewModel
     private lateinit var appPreferences: AppPreferences
     private lateinit var musicPlayerController: MusicPlayerController
 
@@ -70,6 +72,7 @@ class MainActivity : ComponentActivity() {
         playerViewModel = PlayerViewModel(musicRepository, musicPlayerController)
         playlistViewModel = PlaylistViewModel(playlistRepository)
         profileViewModel = ProfileViewModel(userRepository, musicRepository, playlistRepository)
+        settingsViewModel = SettingsViewModel(appPreferences)
 
         setContent {
             var currentUserId by remember { mutableStateOf(-1) }
@@ -103,6 +106,7 @@ class MainActivity : ComponentActivity() {
                         playerViewModel = playerViewModel,
                         playlistViewModel = playlistViewModel,
                         profileViewModel = profileViewModel,
+                        settingsViewModel = settingsViewModel,
                         userId = currentUserId,
                         onLogout = { handleLogout() }
                     )
@@ -138,6 +142,7 @@ fun MainScreen(
     playerViewModel: PlayerViewModel,
     playlistViewModel: PlaylistViewModel,
     profileViewModel: ProfileViewModel,
+    settingsViewModel: SettingsViewModel,
     userId: Int,
     onLogout: () -> Unit
 ) {
@@ -182,6 +187,7 @@ fun MainScreen(
                 playerViewModel = playerViewModel,
                 playlistViewModel = playlistViewModel,
                 profileViewModel = profileViewModel,
+                settingsViewModel = settingsViewModel,
                 userId = userId,
                 onLogout = onLogout,
                 startDestination = Screen.Library.route

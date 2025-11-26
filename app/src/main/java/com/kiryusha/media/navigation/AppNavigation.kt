@@ -11,10 +11,12 @@ import com.kiryusha.media.ui.screens.playlists.PlayerScreen
 import com.kiryusha.media.ui.screens.playlists.PlaylistsScreen
 import com.kiryusha.media.ui.screens.playlists.PlaylistDetailScreen
 import com.kiryusha.media.ui.screens.profile.ProfileScreen
+import com.kiryusha.media.ui.screens.settings.SettingsScreen
 import com.kiryusha.media.viewmodels.LibraryViewModel
 import com.kiryusha.media.viewmodels.PlayerViewModel
 import com.kiryusha.media.viewmodels.PlaylistViewModel
 import com.kiryusha.media.viewmodels.ProfileViewModel
+import com.kiryusha.media.viewmodels.SettingsViewModel
 
 sealed class Screen(val route: String) {
     object Library : Screen("library")
@@ -24,6 +26,7 @@ sealed class Screen(val route: String) {
         fun createRoute(playlistId: Long) = "playlist/$playlistId"
     }
     object Profile : Screen("profile")
+    object Settings : Screen("settings")
 }
 
 @Composable
@@ -33,6 +36,7 @@ fun AppNavigation(
     playerViewModel: PlayerViewModel,
     playlistViewModel: PlaylistViewModel,
     profileViewModel: ProfileViewModel,
+    settingsViewModel: SettingsViewModel,
     userId: Int,
     onLogout: () -> Unit,
     startDestination: String = Screen.Library.route
@@ -108,7 +112,19 @@ fun AppNavigation(
             ProfileScreen(
                 viewModel = profileViewModel,
                 userId = userId,
-                onLogout = onLogout
+                onLogout = onLogout,
+                onNavigateToSettings = {
+                    navController.navigate(Screen.Settings.route)
+                }
+            )
+        }
+
+        composable(Screen.Settings.route) {
+            SettingsScreen(
+                viewModel = settingsViewModel,
+                onBackClick = {
+                    navController.navigateUp()
+                }
             )
         }
     }

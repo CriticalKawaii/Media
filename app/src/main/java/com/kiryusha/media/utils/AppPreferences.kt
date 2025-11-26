@@ -20,6 +20,9 @@ class AppPreferences(private val context: Context) {
         private val DARK_THEME = booleanPreferencesKey("dark_theme")
         private val SHUFFLE_ENABLED = booleanPreferencesKey("shuffle_enabled")
         private val REPEAT_MODE = stringPreferencesKey("repeat_mode")
+        private val NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
+        private val NOTIFICATION_SOUND_ENABLED = booleanPreferencesKey("notification_sound_enabled")
+        private val SHOW_PLAYBACK_NOTIFICATIONS = booleanPreferencesKey("show_playback_notifications")
     }
 
     suspend fun saveUserSession(userId: Int, rememberMe: Boolean) {
@@ -87,5 +90,38 @@ class AppPreferences(private val context: Context) {
     fun getRepeatMode(): Flow<String> = context.dataStore.data
         .map { preferences ->
             preferences[REPEAT_MODE] ?: "OFF"
+        }
+
+    suspend fun setNotificationsEnabled(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[NOTIFICATIONS_ENABLED] = enabled
+        }
+    }
+
+    fun areNotificationsEnabled(): Flow<Boolean> = context.dataStore.data
+        .map { preferences ->
+            preferences[NOTIFICATIONS_ENABLED] ?: true // Default to enabled
+        }
+
+    suspend fun setNotificationSoundEnabled(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[NOTIFICATION_SOUND_ENABLED] = enabled
+        }
+    }
+
+    fun isNotificationSoundEnabled(): Flow<Boolean> = context.dataStore.data
+        .map { preferences ->
+            preferences[NOTIFICATION_SOUND_ENABLED] ?: true // Default to enabled
+        }
+
+    suspend fun setShowPlaybackNotifications(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[SHOW_PLAYBACK_NOTIFICATIONS] = enabled
+        }
+    }
+
+    fun shouldShowPlaybackNotifications(): Flow<Boolean> = context.dataStore.data
+        .map { preferences ->
+            preferences[SHOW_PLAYBACK_NOTIFICATIONS] ?: true // Default to enabled
         }
 }
