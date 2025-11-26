@@ -37,10 +37,8 @@ fun ProfileScreen(
     val playlistCount by viewModel.playlistCount.collectAsState()
 
     val context = LocalContext.current
-    val appPreferences = remember { AppPreferences(context) }
     val coroutineScope = rememberCoroutineScope()
 
-    var darkTheme by remember { mutableStateOf(false) }
     var showLogoutDialog by remember { mutableStateOf(false) }
     var showSettingsDialog by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
@@ -48,10 +46,6 @@ fun ProfileScreen(
 
     LaunchedEffect(userId) {
         viewModel.loadUserProfile(userId)
-
-        appPreferences.isDarkTheme().collect { isDark ->
-            darkTheme = isDark
-        }
     }
 
     LaunchedEffect(Unit) {
@@ -101,25 +95,6 @@ fun ProfileScreen(
             )
 
             Spacer(modifier = Modifier.height(12.dp))
-
-            SettingsItem(
-                icon = Icons.Filled.DarkMode,
-                title = "Dark Theme",
-                subtitle = if (darkTheme) "Enabled" else "Disabled",
-                trailing = {
-                    Switch(
-                        checked = darkTheme,
-                        onCheckedChange = { enabled ->
-                            darkTheme = enabled
-                            coroutineScope.launch {
-                                appPreferences.setDarkTheme(enabled)
-                            }
-                        }
-                    )
-                }
-            )
-
-            HorizontalDivider()
 
             SettingsItem(
                 icon = Icons.Filled.Storage,
@@ -219,7 +194,6 @@ fun ProfileScreen(
                     Column {
                         Text("App Settings", style = MaterialTheme.typography.titleMedium)
                         Spacer(modifier = Modifier.height(8.dp))
-                        Text("• Theme: ${if (darkTheme) "Dark" else "Light"}")
                         Text("• Version: 1.0.0")
                         Text("• Storage: $storageInfo")
                         Spacer(modifier = Modifier.height(8.dp))
