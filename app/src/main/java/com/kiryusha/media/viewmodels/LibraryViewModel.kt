@@ -169,6 +169,30 @@ class LibraryViewModel(
     fun refreshLibrary() {
         loadLibrary()
     }
+
+    fun deleteTrack(track: Track) {
+        viewModelScope.launch {
+            try {
+                musicRepository.deleteTrack(track)
+                _uiState.value = LibraryUiState.Success("Track removed from library")
+                loadAlbums()
+            } catch (e: Exception) {
+                _uiState.value = LibraryUiState.Error("Failed to remove track: ${e.message}")
+            }
+        }
+    }
+
+    fun deleteTracks(tracks: List<Track>) {
+        viewModelScope.launch {
+            try {
+                musicRepository.deleteTracks(tracks)
+                _uiState.value = LibraryUiState.Success("${tracks.size} tracks removed from library")
+                loadAlbums()
+            } catch (e: Exception) {
+                _uiState.value = LibraryUiState.Error("Failed to remove tracks: ${e.message}")
+            }
+        }
+    }
 }
 
 // Enhanced PlayerViewModel with favorite toggle
