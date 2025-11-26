@@ -5,12 +5,14 @@ import androidx.lifecycle.viewModelScope
 import com.kiryusha.media.database.entities.Playlist
 import com.kiryusha.media.database.entities.PlaylistWithTracks
 import com.kiryusha.media.database.entities.Track
+import com.kiryusha.media.repository.MusicRepository
 import com.kiryusha.media.repository.PlaylistRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 class PlaylistViewModel(
-    private val playlistRepository: PlaylistRepository
+    private val playlistRepository: PlaylistRepository,
+    private val musicRepository: MusicRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<PlaylistUiState>(PlaylistUiState.Idle)
@@ -26,7 +28,15 @@ class PlaylistViewModel(
 
     private val _userIdFlow = MutableStateFlow(-1)
 
-    val userPlaylists: StateFlow<List<PlaylistWithTracks>> =
+    private val _favoriteTracks: StateFlow<List<Track>> =
+        musicRepository.getFavoriteTracks()
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000),
+                initialValue = emptyList()
+            )
+
+    private val _userPlaylistsOnly: StateFlow<List<PlaylistWithTracks>> =
         _userIdFlow
             .flatMapLatest { userId ->
                 if (userId == -1) {
@@ -40,6 +50,29 @@ class PlaylistViewModel(
                 started = SharingStarted.WhileSubscribed(5000),
                 initialValue = emptyList()
             )
+
+    val userPlaylists: StateFlow<List<PlaylistWithTracks>> =
+        combine(_favoriteTracks, _userPlaylistsOnly) { favorites, playlists ->
+            val favoritePlaylist = if (favorites.isNotEmpty()) {
+                PlaylistWithTracks(
+                    playlist = Playlist(
+                        playlistId = -1, // Special ID for favorites
+                        name = "Favorites",
+                        description = "Your favorite tracks",
+                        userId = currentUserId
+                    ),
+                    tracks = favorites
+                )
+                listOf(favoritePlaylist)
+            } else {
+                emptyList()
+            }
+            favoritePlaylist + playlists
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
 
     fun setUserId(userId: Int) {
         currentUserId = userId
@@ -72,14 +105,31 @@ class PlaylistViewModel(
         viewModelScope.launch {
             _uiState.value = PlaylistUiState.Loading
             try {
-                val playlist = playlistRepository.getPlaylistWithTracks(playlistId)
-                val orderedTracks = playlistRepository.getPlaylistTracksOrdered(playlistId)
-                _currentPlaylist.value = playlist
-                _currentPlaylistTracks.value = orderedTracks
-                _uiState.value = if (playlist != null) {
-                    PlaylistUiState.PlaylistLoaded(playlist)
+                // Handle special case for Favorites playlist (playlistId = -1)
+                if (playlistId == -1L) {
+                    val favorites = _favoriteTracks.value
+                    val favoritesPlaylist = PlaylistWithTracks(
+                        playlist = Playlist(
+                            playlistId = -1,
+                            name = "Favorites",
+                            description = "Your favorite tracks",
+                            userId = currentUserId
+                        ),
+                        tracks = favorites
+                    )
+                    _currentPlaylist.value = favoritesPlaylist
+                    _currentPlaylistTracks.value = favorites
+                    _uiState.value = PlaylistUiState.PlaylistLoaded(favoritesPlaylist)
                 } else {
-                    PlaylistUiState.Error("Плейлист не найден")
+                    val playlist = playlistRepository.getPlaylistWithTracks(playlistId)
+                    val orderedTracks = playlistRepository.getPlaylistTracksOrdered(playlistId)
+                    _currentPlaylist.value = playlist
+                    _currentPlaylistTracks.value = orderedTracks
+                    _uiState.value = if (playlist != null) {
+                        PlaylistUiState.PlaylistLoaded(playlist)
+                    } else {
+                        PlaylistUiState.Error("Плейлист не найден")
+                    }
                 }
             } catch (e: Exception) {
                 _uiState.value = PlaylistUiState.Error("Ошибка загрузки: ${e.message}")

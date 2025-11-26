@@ -58,14 +58,18 @@ fun PlaylistDetailScreen(
         tracks = orderedTracks
     }
 
+    val isFavoritesPlaylist = playlistId == -1L
+
     val reorderableState = rememberReorderableLazyListState(
         onMove = { from, to ->
-            tracks = tracks.toMutableList().apply {
-                add(to.index, removeAt(from.index))
+            if (!isFavoritesPlaylist) {
+                tracks = tracks.toMutableList().apply {
+                    add(to.index, removeAt(from.index))
+                }
+                // Persist the new order to database
+                val trackIds = tracks.map { it.trackId }
+                viewModel.updateTrackPositions(playlistId, trackIds)
             }
-            // Persist the new order to database
-            val trackIds = tracks.map { it.trackId }
-            viewModel.updateTrackPositions(playlistId, trackIds)
         }
     )
 
@@ -79,20 +83,24 @@ fun PlaylistDetailScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { showEditDialog = true }) {
-                        Icon(Icons.Filled.Edit, "Edit")
-                    }
-                    IconButton(onClick = { showDeleteConfirmation = true }) {
-                        Icon(Icons.Filled.Delete, "Delete")
+                    if (!isFavoritesPlaylist) {
+                        IconButton(onClick = { showEditDialog = true }) {
+                            Icon(Icons.Filled.Edit, "Edit")
+                        }
+                        IconButton(onClick = { showDeleteConfirmation = true }) {
+                            Icon(Icons.Filled.Delete, "Delete")
+                        }
                     }
                 }
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { showAddTracksDialog = true }
-            ) {
-                Icon(Icons.Filled.Add, "Add tracks")
+            if (!isFavoritesPlaylist) {
+                FloatingActionButton(
+                    onClick = { showAddTracksDialog = true }
+                ) {
+                    Icon(Icons.Filled.Add, "Add tracks")
+                }
             }
         }
     ) { paddingValues ->
@@ -135,27 +143,45 @@ fun PlaylistDetailScreen(
                             if (tracks.isEmpty()) {
                                 EmptyPlaylistMessage()
                             } else {
-                                LazyColumn(
-                                    state = reorderableState.listState,
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .reorderable(reorderableState),
-                                    contentPadding = PaddingValues(16.dp),
-                                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    itemsIndexed(tracks, key = { _, track -> track.trackId }) { index, track ->
-                                        ReorderableItem(reorderableState, key = track.trackId) { isDragging ->
-                                            SwipeablePlaylistTrackItem(
+                                if (isFavoritesPlaylist) {
+                                    // Favorites playlist: no reordering, no swipe-to-delete
+                                    LazyColumn(
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentPadding = PaddingValues(16.dp),
+                                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        itemsIndexed(tracks, key = { _, track -> track.trackId }) { index, track ->
+                                            FavoriteTrackItem(
                                                 track = track,
                                                 position = index + 1,
-                                                isDragging = isDragging,
-                                                onClick = { onTrackClick(tracks, index) },
-                                                onRemove = {
-                                                    viewModel.removeTrackFromPlaylist(playlistId, track.trackId)
-                                                },
-                                                modifier = Modifier
-                                                    .detectReorderAfterLongPress(reorderableState)
+                                                onClick = { onTrackClick(tracks, index) }
                                             )
+                                        }
+                                    }
+                                } else {
+                                    // Regular playlist: with reordering and swipe-to-delete
+                                    LazyColumn(
+                                        state = reorderableState.listState,
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .reorderable(reorderableState),
+                                        contentPadding = PaddingValues(16.dp),
+                                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        itemsIndexed(tracks, key = { _, track -> track.trackId }) { index, track ->
+                                            ReorderableItem(reorderableState, key = track.trackId) { isDragging ->
+                                                SwipeablePlaylistTrackItem(
+                                                    track = track,
+                                                    position = index + 1,
+                                                    isDragging = isDragging,
+                                                    onClick = { onTrackClick(tracks, index) },
+                                                    onRemove = {
+                                                        viewModel.removeTrackFromPlaylist(playlistId, track.trackId)
+                                                    },
+                                                    modifier = Modifier
+                                                        .detectReorderAfterLongPress(reorderableState)
+                                                )
+                                            }
                                         }
                                     }
                                 }
@@ -222,6 +248,66 @@ fun PlaylistDetailScreen(
                 onAddTrack = { track ->
                     viewModel.addTrackToPlaylist(playlistId, track.trackId)
                 }
+            )
+        }
+    }
+}
+
+@Composable
+fun FavoriteTrackItem(
+    track: Track,
+    position: Int,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "$position",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.width(32.dp)
+            )
+
+            AsyncImage(
+                model = track.albumArtUri,
+                contentDescription = track.title,
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(4.dp)),
+                contentScale = ContentScale.Crop
+            )
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = track.title,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                Text(
+                    text = track.artist,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            Text(
+                text = track.getDurationFormatted(),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
