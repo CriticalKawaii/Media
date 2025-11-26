@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -28,6 +29,8 @@ import com.kiryusha.media.navigation.Screen
 import com.kiryusha.media.repository.MusicRepository
 import com.kiryusha.media.repository.PlaylistRepository
 import com.kiryusha.media.repository.UserRepository
+import com.kiryusha.media.ui.screens.player.MiniPlayerBar
+import com.kiryusha.media.ui.screens.player.PlayerScreen
 import com.kiryusha.media.ui.theme.MediaTheme
 import com.kiryusha.media.utils.AppPreferences
 import com.kiryusha.media.utils.MediaScanner
@@ -147,50 +150,79 @@ fun MainScreen(
     onLogout: () -> Unit
 ) {
     val navController = rememberNavController()
+    val currentTrack by playerViewModel.currentTrack.collectAsState()
+    val isPlaying by playerViewModel.isPlaying.collectAsState()
+    val progress by playerViewModel.progress.collectAsState()
+    val isPlayerExpanded by playerViewModel.isPlayerExpanded.collectAsState()
 
-    Scaffold(
-        bottomBar = {
-            NavigationBar {
-                val navBackStackEntry by navController.currentBackStackEntryAsState()
-                val currentDestination = navBackStackEntry?.destination
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            bottomBar = {
+                Column {
+                    // Mini Player Bar
+                    if (currentTrack != null && !isPlayerExpanded) {
+                        MiniPlayerBar(
+                            currentTrack = currentTrack,
+                            isPlaying = isPlaying,
+                            progress = progress,
+                            onTogglePlayPause = { playerViewModel.togglePlayPause() },
+                            onSkipNext = { playerViewModel.skipNext() },
+                            onExpand = { playerViewModel.expandPlayer() }
+                        )
+                    }
 
-                val items = listOf(
-                    BottomNavItem("Library", Screen.Library.route, Icons.Filled.Home),
-                    BottomNavItem("Playlists", Screen.Playlists.route, Icons.Filled.List),
-                    BottomNavItem("Player", Screen.Player.route, Icons.Filled.PlayArrow),
-                    BottomNavItem("Profile", Screen.Profile.route, Icons.Filled.Person)
-                )
+                    // Bottom Navigation
+                    NavigationBar {
+                        val navBackStackEntry by navController.currentBackStackEntryAsState()
+                        val currentDestination = navBackStackEntry?.destination
 
-                items.forEach { item ->
-                    NavigationBarItem(
-                        icon = { Icon(item.icon, contentDescription = item.title) },
-                        label = { Text(item.title) },
-                        selected = currentDestination?.hierarchy?.any { it.route == item.route } == true,
-                        onClick = {
-                            navController.navigate(item.route) {
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
+                        val items = listOf(
+                            BottomNavItem("Library", Screen.Library.route, Icons.Filled.Home),
+                            BottomNavItem("Playlists", Screen.Playlists.route, Icons.Filled.List),
+                            BottomNavItem("Profile", Screen.Profile.route, Icons.Filled.Person)
+                        )
+
+                        items.forEach { item ->
+                            NavigationBarItem(
+                                icon = { Icon(item.icon, contentDescription = item.title) },
+                                label = { Text(item.title) },
+                                selected = currentDestination?.hierarchy?.any { it.route == item.route } == true,
+                                onClick = {
+                                    navController.navigate(item.route) {
+                                        popUpTo(navController.graph.findStartDestination().id) {
+                                            saveState = true
+                                        }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
                                 }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
+                            )
                         }
-                    )
+                    }
                 }
             }
+        ) { paddingValues ->
+            Box(modifier = Modifier.padding(paddingValues)) {
+                AppNavigation(
+                    navController = navController,
+                    libraryViewModel = libraryViewModel,
+                    playerViewModel = playerViewModel,
+                    playlistViewModel = playlistViewModel,
+                    profileViewModel = profileViewModel,
+                    settingsViewModel = settingsViewModel,
+                    userId = userId,
+                    onLogout = onLogout,
+                    startDestination = Screen.Library.route
+                )
+            }
         }
-    ) { paddingValues ->
-        Box(modifier = Modifier.padding(paddingValues)) {
-            AppNavigation(
-                navController = navController,
-                libraryViewModel = libraryViewModel,
-                playerViewModel = playerViewModel,
+
+        // Full-screen Player Overlay
+        if (isPlayerExpanded) {
+            PlayerScreen(
+                viewModel = playerViewModel,
                 playlistViewModel = playlistViewModel,
-                profileViewModel = profileViewModel,
-                settingsViewModel = settingsViewModel,
-                userId = userId,
-                onLogout = onLogout,
-                startDestination = Screen.Library.route
+                onBackClick = { playerViewModel.collapsePlayer() }
             )
         }
     }

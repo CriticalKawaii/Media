@@ -1,4 +1,4 @@
-package com.kiryusha.media.ui.screens.playlists
+package com.kiryusha.media.ui.screens.player
 
 import android.content.Intent
 import androidx.compose.animation.core.Spring
@@ -7,6 +7,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items as lazyItems
@@ -24,15 +25,14 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
-import com.kiryusha.media.database.entities.PlaylistWithTracks
 import com.kiryusha.media.database.entities.Track
 import com.kiryusha.media.ui.screens.library.AddToPlaylistDialog
 import com.kiryusha.media.viewmodels.PlayerViewModel
-import com.kiryusha.media.viewmodels.PlaylistUiState
 import com.kiryusha.media.viewmodels.PlaylistViewModel
 import com.kiryusha.media.viewmodels.RepeatMode
 import kotlin.math.abs
@@ -54,6 +54,7 @@ fun PlayerScreen(
     val playlists by playlistViewModel.userPlaylists.collectAsState()
 
     var offsetX by remember { mutableStateOf(0f) }
+    var offsetY by remember { mutableStateOf(0f) }
     var showExpandedArt by remember { mutableStateOf(false) }
     var showAddToPlaylistDialog by remember { mutableStateOf(false) }
     var showQueueDialog by remember { mutableStateOf(false) }
@@ -64,8 +65,11 @@ fun PlayerScreen(
             TopAppBar(
                 title = { Text("Now Playing") },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.Filled.KeyboardArrowDown, "Back")
+                    IconButton(onClick = {
+                        viewModel.collapsePlayer()
+                        onBackClick()
+                    }) {
+                        Icon(Icons.Filled.KeyboardArrowDown, "Collapse")
                     }
                 },
                 actions = {
@@ -100,6 +104,27 @@ fun PlayerScreen(
                         )
                     )
                 )
+                .pointerInput(Unit) {
+                    detectVerticalDragGestures(
+                        onDragEnd = {
+                            if (offsetY > 150) {
+                                viewModel.collapsePlayer()
+                                onBackClick()
+                            }
+                            offsetY = 0f
+                        },
+                        onVerticalDrag = { change, dragAmount ->
+                            if (dragAmount > 0) {
+                                change.consume()
+                                offsetY += dragAmount
+                            }
+                        }
+                    )
+                }
+                .graphicsLayer {
+                    translationY = offsetY.coerceAtLeast(0f)
+                    alpha = 1f - (offsetY / 500f).coerceIn(0f, 0.3f)
+                }
         ) {
             currentTrack?.let { track ->
                 Column(

@@ -45,6 +45,9 @@ class PlayerViewModel(
     private val _playerState = MutableStateFlow<PlayerState>(PlayerState.Idle)
     val playerState: StateFlow<PlayerState> = _playerState.asStateFlow()
 
+    private val _isPlayerExpanded = MutableStateFlow(false)
+    val isPlayerExpanded: StateFlow<Boolean> = _isPlayerExpanded.asStateFlow()
+
     private var userId: Int = -1
     private var progressUpdateJob: Job? = null
 
@@ -238,6 +241,14 @@ class PlayerViewModel(
                 // Handle error silently for now
             }
         }
+    }
+
+    fun expandPlayer() {
+        _isPlayerExpanded.value = true
+    }
+
+    fun collapsePlayer() {
+        _isPlayerExpanded.value = false
     }
 
     private fun setupPlayerListener() {
