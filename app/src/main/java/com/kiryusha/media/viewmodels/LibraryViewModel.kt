@@ -63,6 +63,12 @@ class LibraryViewModel(
     private val _showTrackSelection = MutableStateFlow(false)
     val showTrackSelection: StateFlow<Boolean> = _showTrackSelection.asStateFlow()
 
+    private val _isSelectionMode = MutableStateFlow(false)
+    val isSelectionMode: StateFlow<Boolean> = _isSelectionMode.asStateFlow()
+
+    private val _selectedTracks = MutableStateFlow<Set<Long>>(emptySet())
+    val selectedTracks: StateFlow<Set<Long>> = _selectedTracks.asStateFlow()
+
     init {
         loadLibrary()
     }
@@ -168,6 +174,59 @@ class LibraryViewModel(
 
     fun refreshLibrary() {
         loadLibrary()
+    }
+
+    fun toggleSelectionMode() {
+        _isSelectionMode.value = !_isSelectionMode.value
+        if (!_isSelectionMode.value) {
+            _selectedTracks.value = emptySet()
+        }
+    }
+
+    fun toggleTrackSelection(trackId: Long) {
+        _selectedTracks.value = if (trackId in _selectedTracks.value) {
+            _selectedTracks.value - trackId
+        } else {
+            _selectedTracks.value + trackId
+        }
+    }
+
+    fun selectAllTracks() {
+        _selectedTracks.value = allTracks.value.map { it.trackId }.toSet()
+    }
+
+    fun deselectAllTracks() {
+        _selectedTracks.value = emptySet()
+    }
+
+    fun deleteSelectedTracks() {
+        viewModelScope.launch {
+            _uiState.value = LibraryUiState.Loading
+            try {
+                val tracksToDelete = allTracks.value.filter { it.trackId in _selectedTracks.value }
+                if (tracksToDelete.isNotEmpty()) {
+                    musicRepository.deleteTracks(tracksToDelete)
+                    _uiState.value = LibraryUiState.Success("Removed ${tracksToDelete.size} tracks from library")
+                }
+                _isSelectionMode.value = false
+                _selectedTracks.value = emptySet()
+                loadAlbums()
+            } catch (e: Exception) {
+                _uiState.value = LibraryUiState.Error("Failed to delete tracks: ${e.message}")
+            }
+        }
+    }
+
+    fun deleteSingleTrack(track: Track) {
+        viewModelScope.launch {
+            try {
+                musicRepository.deleteTrack(track)
+                _uiState.value = LibraryUiState.Success("Removed \"${track.title}\" from library")
+                loadAlbums()
+            } catch (e: Exception) {
+                _uiState.value = LibraryUiState.Error("Failed to delete track: ${e.message}")
+            }
+        }
     }
 }
 

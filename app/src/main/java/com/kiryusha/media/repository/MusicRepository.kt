@@ -62,6 +62,16 @@ class MusicRepository(
         trackDao.insertTracks(tracks)
     }
 
+    suspend fun deleteTrack(track: Track) {
+        trackDao.deleteTrack(track)
+    }
+
+    suspend fun deleteTracks(tracks: List<Track>) = withContext(Dispatchers.IO) {
+        tracks.forEach { track ->
+            trackDao.deleteTrack(track)
+        }
+    }
+
     suspend fun getTrackCount(): Int = trackDao.getTrackCount()
 
     suspend fun recordPlay(trackId: Long, userId: Int) {

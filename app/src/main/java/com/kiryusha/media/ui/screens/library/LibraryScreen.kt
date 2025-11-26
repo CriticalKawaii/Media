@@ -57,10 +57,13 @@ fun LibraryScreen(
     val playlists by playlistViewModel.userPlaylists.collectAsState()
     val showTrackSelection by viewModel.showTrackSelection.collectAsState()
     val availableTracks by viewModel.availableTracks.collectAsState()
+    val isSelectionMode by viewModel.isSelectionMode.collectAsState()
+    val selectedTracks by viewModel.selectedTracks.collectAsState()
 
     var showSearchBar by remember { mutableStateOf(false) }
     var showAddToPlaylistDialog by remember { mutableStateOf<Track?>(null) }
     var showCreatePlaylistDialog by remember { mutableStateOf(false) }
+    var showDeleteConfirmation by remember { mutableStateOf(false) }
 
     // Tooltip management
     val tooltipManager = rememberTooltipManager()
@@ -96,28 +99,70 @@ fun LibraryScreen(
                 }
             } else {
                 TopAppBar(
-                    title = { Text("Library") },
+                    title = {
+                        if (isSelectionMode) {
+                            Text("${selectedTracks.size} selected")
+                        } else {
+                            Text("Library")
+                        }
+                    },
+                    navigationIcon = {
+                        if (isSelectionMode) {
+                            IconButton(onClick = { viewModel.toggleSelectionMode() }) {
+                                Icon(Icons.Filled.Close, "Exit selection mode")
+                            }
+                        }
+                    },
                     actions = {
-                        // View mode toggle
-                        IconButton(onClick = {
-                            viewModel.cycleViewMode()
-                        }) {
-                            Icon(
-                                when(viewMode) {
-                                    ViewMode.ALBUMS -> Icons.Filled.GridView
-                                    ViewMode.TRACKS -> Icons.Filled.List
-                                    ViewMode.ARTISTS -> Icons.Filled.Person
-                                },
-                                "View Mode"
-                            )
-                        }
+                        if (isSelectionMode) {
+                            // Selection mode actions
+                            IconButton(onClick = {
+                                if (selectedTracks.size == tracks.size) {
+                                    viewModel.deselectAllTracks()
+                                } else {
+                                    viewModel.selectAllTracks()
+                                }
+                            }) {
+                                Icon(
+                                    if (selectedTracks.size == tracks.size) Icons.Filled.CheckCircle else Icons.Filled.CheckBox,
+                                    if (selectedTracks.size == tracks.size) "Deselect all" else "Select all"
+                                )
+                            }
+                            IconButton(
+                                onClick = { showDeleteConfirmation = true },
+                                enabled = selectedTracks.isNotEmpty()
+                            ) {
+                                Icon(Icons.Filled.Delete, "Delete selected")
+                            }
+                        } else {
+                            // Normal mode actions
+                            if (viewMode == ViewMode.TRACKS && tracks.isNotEmpty()) {
+                                IconButton(onClick = { viewModel.toggleSelectionMode() }) {
+                                    Icon(Icons.Filled.Checklist, "Select tracks")
+                                }
+                            }
 
-                        IconButton(onClick = { showSearchBar = true }) {
-                            Icon(Icons.Filled.Search, "Search")
-                        }
+                            // View mode toggle
+                            IconButton(onClick = {
+                                viewModel.cycleViewMode()
+                            }) {
+                                Icon(
+                                    when(viewMode) {
+                                        ViewMode.ALBUMS -> Icons.Filled.GridView
+                                        ViewMode.TRACKS -> Icons.Filled.List
+                                        ViewMode.ARTISTS -> Icons.Filled.Person
+                                    },
+                                    "View Mode"
+                                )
+                            }
 
-                        IconButton(onClick = { viewModel.scanMediaFiles() }) {
-                            Icon(Icons.Filled.Refresh, "Scan Media")
+                            IconButton(onClick = { showSearchBar = true }) {
+                                Icon(Icons.Filled.Search, "Search")
+                            }
+
+                            IconButton(onClick = { viewModel.scanMediaFiles() }) {
+                                Icon(Icons.Filled.Refresh, "Scan Media")
+                            }
                         }
                     }
                 )
@@ -204,14 +249,25 @@ fun LibraryScreen(
                                     TrackListView(
                                         tracks = tracks,
                                         playerViewModel = playerViewModel,
+                                        isSelectionMode = isSelectionMode,
+                                        selectedTracks = selectedTracks,
                                         onTrackClick = { track ->
-                                            val index = tracks.indexOf(track)
-                                            if (index >= 0) {
-                                                onTrackClick(tracks, index)
+                                            if (isSelectionMode) {
+                                                viewModel.toggleTrackSelection(track.trackId)
+                                            } else {
+                                                val index = tracks.indexOf(track)
+                                                if (index >= 0) {
+                                                    onTrackClick(tracks, index)
+                                                }
                                             }
                                         },
                                         onTrackLongClick = { track ->
-                                            showAddToPlaylistDialog = track
+                                            if (!isSelectionMode) {
+                                                showAddToPlaylistDialog = track
+                                            }
+                                        },
+                                        onDeleteTrack = { track ->
+                                            viewModel.deleteSingleTrack(track)
                                         }
                                     )
                                 }
@@ -283,6 +339,41 @@ fun LibraryScreen(
                 }
             )
         }
+
+        // Delete confirmation dialog
+        if (showDeleteConfirmation) {
+            AlertDialog(
+                onDismissRequest = { showDeleteConfirmation = false },
+                title = { Text("Remove from Library?") },
+                text = {
+                    Text(
+                        if (selectedTracks.size == 1) {
+                            "Remove this track from your library?"
+                        } else {
+                            "Remove ${selectedTracks.size} tracks from your library?"
+                        }
+                    )
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            viewModel.deleteSelectedTracks()
+                            showDeleteConfirmation = false
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error
+                        )
+                    ) {
+                        Text("Remove")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDeleteConfirmation = false }) {
+                        Text("Cancel")
+                    }
+                }
+            )
+        }
     }
 }
 
@@ -292,7 +383,10 @@ fun TrackListView(
     tracks: List<Track>,
     playerViewModel: PlayerViewModel,
     onTrackClick: (Track) -> Unit,
-    onTrackLongClick: ((Track) -> Unit)? = null
+    onTrackLongClick: ((Track) -> Unit)? = null,
+    isSelectionMode: Boolean = false,
+    selectedTracks: Set<Long> = emptySet(),
+    onDeleteTrack: ((Track) -> Unit)? = null
 ) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(1),
@@ -304,7 +398,10 @@ fun TrackListView(
                 track = track,
                 playerViewModel = playerViewModel,
                 onClick = { onTrackClick(track) },
-                onLongClick = { onTrackLongClick?.invoke(track) }
+                onLongClick = { onTrackLongClick?.invoke(track) },
+                isSelectionMode = isSelectionMode,
+                isSelected = track.trackId in selectedTracks,
+                onDeleteTrack = onDeleteTrack
             )
         }
     }
@@ -316,7 +413,10 @@ fun SwipeableTrackItem(
     track: Track,
     playerViewModel: PlayerViewModel,
     onClick: () -> Unit,
-    onLongClick: (() -> Unit)? = null
+    onLongClick: (() -> Unit)? = null,
+    isSelectionMode: Boolean = false,
+    isSelected: Boolean = false,
+    onDeleteTrack: ((Track) -> Unit)? = null
 ) {
     var offsetX by remember { mutableStateOf(0f) }
     var showMenu by remember { mutableStateOf(false) }
@@ -327,26 +427,37 @@ fun SwipeableTrackItem(
             modifier = Modifier
                 .fillMaxWidth()
                 .graphicsLayer {
-                    translationX = offsetX
+                    translationX = if (isSelectionMode) 0f else offsetX
                 }
-                .pointerInput(Unit) {
-                    detectHorizontalDragGestures(
-                        onDragEnd = {
-                            offsetX = 0f
-                        },
-                        onHorizontalDrag = { change, dragAmount ->
-                            change.consume()
-                            offsetX = (offsetX + dragAmount).coerceIn(-200f, 200f)
-                        }
-                    )
+                .pointerInput(isSelectionMode) {
+                    if (!isSelectionMode) {
+                        detectHorizontalDragGestures(
+                            onDragEnd = {
+                                offsetX = 0f
+                            },
+                            onHorizontalDrag = { change, dragAmount ->
+                                change.consume()
+                                offsetX = (offsetX + dragAmount).coerceIn(-200f, 200f)
+                            }
+                        )
+                    }
                 }
                 .combinedClickable(
                     onClick = onClick,
-                    onLongClick = onLongClick
+                    onLongClick = if (isSelectionMode) null else onLongClick
                 )
                 .padding(vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Checkbox for selection mode
+            if (isSelectionMode) {
+                Checkbox(
+                    checked = isSelected,
+                    onCheckedChange = { onClick() },
+                    modifier = Modifier.padding(end = 8.dp)
+                )
+            }
+
             AsyncImage(
                 model = track.albumArtUri,
                 contentDescription = track.title,
@@ -382,50 +493,69 @@ fun SwipeableTrackItem(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            IconButton(onClick = { showMenu = true }) {
-                Icon(Icons.Filled.MoreVert, "More options")
+            if (!isSelectionMode) {
+                IconButton(onClick = { showMenu = true }) {
+                    Icon(Icons.Filled.MoreVert, "More options")
+                }
             }
         }
 
-        DropdownMenu(
-            expanded = showMenu,
-            onDismissRequest = { showMenu = false }
-        ) {
-            DropdownMenuItem(
-                text = { Text("Add to queue") },
-                onClick = {
-                    playerViewModel.addTrackToQueue(track)
-                    showMenu = false
-                },
-                leadingIcon = {
-                    Icon(Icons.Filled.PlaylistPlay, contentDescription = null)
-                }
-            )
-            DropdownMenuItem(
-                text = { Text("Add to playlist") },
-                onClick = {
-                    onLongClick?.invoke()
-                    showMenu = false
-                },
-                leadingIcon = {
-                    Icon(Icons.Filled.Add, contentDescription = null)
-                }
-            )
-            DropdownMenuItem(
-                text = { Text("Share") },
-                onClick = {
-                    showMenu = false
-                    val shareIntent = android.content.Intent().apply {
-                        action = android.content.Intent.ACTION_SEND
-                        putExtra(android.content.Intent.EXTRA_TEXT, "Check out: ${track.title} by ${track.artist}")
-                        type = "text/plain"
+        if (!isSelectionMode) {
+            DropdownMenu(
+                expanded = showMenu,
+                onDismissRequest = { showMenu = false }
+            ) {
+                DropdownMenuItem(
+                    text = { Text("Add to queue") },
+                    onClick = {
+                        playerViewModel.addTrackToQueue(track)
+                        showMenu = false
+                    },
+                    leadingIcon = {
+                        Icon(Icons.Filled.PlaylistPlay, contentDescription = null)
                     }
-                    context.startActivity(android.content.Intent.createChooser(shareIntent, "Share track"))
-                },
-                leadingIcon = {
-                    Icon(Icons.Filled.Share, contentDescription = null)
-                }
-            )
+                )
+                DropdownMenuItem(
+                    text = { Text("Add to playlist") },
+                    onClick = {
+                        onLongClick?.invoke()
+                        showMenu = false
+                    },
+                    leadingIcon = {
+                        Icon(Icons.Filled.Add, contentDescription = null)
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text("Share") },
+                    onClick = {
+                        showMenu = false
+                        val shareIntent = android.content.Intent().apply {
+                            action = android.content.Intent.ACTION_SEND
+                            putExtra(android.content.Intent.EXTRA_TEXT, "Check out: ${track.title} by ${track.artist}")
+                            type = "text/plain"
+                        }
+                        context.startActivity(android.content.Intent.createChooser(shareIntent, "Share track"))
+                    },
+                    leadingIcon = {
+                        Icon(Icons.Filled.Share, contentDescription = null)
+                    }
+                )
+                HorizontalDivider()
+                DropdownMenuItem(
+                    text = { Text("Remove from library") },
+                    onClick = {
+                        showMenu = false
+                        onDeleteTrack?.invoke(track)
+                    },
+                    leadingIcon = {
+                        Icon(Icons.Filled.Delete, contentDescription = null)
+                    },
+                    colors = MenuDefaults.itemColors(
+                        textColor = MaterialTheme.colorScheme.error,
+                        leadingIconColor = MaterialTheme.colorScheme.error
+                    )
+                )
+            }
         }
     }
 }
