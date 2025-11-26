@@ -63,7 +63,8 @@ class MainActivity : ComponentActivity() {
         val database = MediaApplication.database
         val musicRepository = MusicRepository(
             database.trackDao(),
-            database.playbackHistoryDao()
+            database.playbackHistoryDao(),
+            database.userFavoriteDao()
         )
         val playlistRepository = PlaylistRepository(database.playlistDao())
         val userRepository = UserRepository(database.userDao())
@@ -84,6 +85,7 @@ class MainActivity : ComponentActivity() {
                 if (userId != -1) {
                     playerViewModel.setUserId(userId)
                     playlistViewModel.setUserId(userId)
+                    libraryViewModel.setUserId(userId)
                     profileViewModel.loadUserProfile(userId)
                 }
             }

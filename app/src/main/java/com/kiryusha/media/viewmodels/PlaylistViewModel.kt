@@ -29,7 +29,14 @@ class PlaylistViewModel(
     private val _userIdFlow = MutableStateFlow(-1)
 
     private val _favoriteTracks: StateFlow<List<Track>> =
-        musicRepository.getFavoriteTracks()
+        _userIdFlow
+            .flatMapLatest { userId ->
+                if (userId == -1) {
+                    flowOf(emptyList())
+                } else {
+                    musicRepository.getFavoriteTracks(userId)
+                }
+            }
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5000),

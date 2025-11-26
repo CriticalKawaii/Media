@@ -21,6 +21,9 @@ class PlayerViewModel(
     private val _currentTrack = MutableStateFlow<Track?>(null)
     val currentTrack: StateFlow<Track?> = _currentTrack.asStateFlow()
 
+    private val _isCurrentTrackFavorite = MutableStateFlow(false)
+    val isCurrentTrackFavorite: StateFlow<Boolean> = _isCurrentTrackFavorite.asStateFlow()
+
     private val _isPlaying = MutableStateFlow(false)
     val isPlaying: StateFlow<Boolean> = _isPlaying.asStateFlow()
 
@@ -72,6 +75,11 @@ class PlayerViewModel(
             _progress.value = 0f
             _currentPosition.value = 0L
             _playerState.value = PlayerState.Playing
+
+            // Check if track is favorite
+            if (userId != -1) {
+                _isCurrentTrackFavorite.value = musicRepository.isFavorite(userId, track.trackId)
+            }
 
             // Play through controller
             playerController.playTrack(track)
@@ -225,14 +233,13 @@ class PlayerViewModel(
     }
 
     fun toggleFavorite(trackId: Long, isFavorite: Boolean) {
+        if (userId == -1) return
         viewModelScope.launch {
             try {
-                musicRepository.toggleFavorite(trackId, !isFavorite)
-                // Update current track if it's the one being favorited
-                _currentTrack.value?.let { track ->
-                    if (track.trackId == trackId) {
-                        _currentTrack.value = track.copy(isFavorite = !isFavorite)
-                    }
+                musicRepository.toggleFavorite(userId, trackId, !isFavorite)
+                // Update current track favorite status if it's the track being toggled
+                if (_currentTrack.value?.trackId == trackId) {
+                    _isCurrentTrackFavorite.value = !isFavorite
                 }
             } catch (e: Exception) {
                 // Handle error silently for now
