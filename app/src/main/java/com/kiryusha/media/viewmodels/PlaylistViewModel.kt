@@ -53,8 +53,8 @@ class PlaylistViewModel(
 
     val userPlaylists: StateFlow<List<PlaylistWithTracks>> =
         combine(_favoriteTracks, _userPlaylistsOnly) { favorites, playlists ->
-            val favoritePlaylist = if (favorites.isNotEmpty()) {
-                PlaylistWithTracks(
+            if (favorites.isNotEmpty()) {
+                val favoritePlaylist = PlaylistWithTracks(
                     playlist = Playlist(
                         playlistId = -1, // Special ID for favorites
                         name = "Favorites",
@@ -63,11 +63,10 @@ class PlaylistViewModel(
                     ),
                     tracks = favorites
                 )
-                listOf(favoritePlaylist)
+                listOf(favoritePlaylist) + playlists
             } else {
-                emptyList()
+                playlists
             }
-            favoritePlaylist + playlists
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
