@@ -7,6 +7,7 @@ import com.kiryusha.media.database.entities.PlaybackHistory
 import com.kiryusha.media.database.entities.Track
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 
 class MusicRepository(
@@ -41,11 +42,7 @@ class MusicRepository(
     }
 
     suspend fun getAlbumWithTracks(albumName: String): Album? = withContext(Dispatchers.IO) {
-        val tracksList = mutableListOf<Track>()
-        trackDao.getTracksByAlbum(albumName).collect { tracks ->
-            tracksList.clear()
-            tracksList.addAll(tracks)
-        }
+        val tracksList = trackDao.getTracksByAlbum(albumName).first()
 
         if (tracksList.isEmpty()) return@withContext null
 
