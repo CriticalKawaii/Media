@@ -67,6 +67,16 @@ class PlayerViewModel(
 
     fun setUserId(id: Int) {
         userId = id
+        // Re-check favorite status for current track when user changes
+        viewModelScope.launch {
+            _currentTrack.value?.let { track ->
+                if (id != -1) {
+                    _isCurrentTrackFavorite.value = musicRepository.isFavorite(id, track.trackId)
+                } else {
+                    _isCurrentTrackFavorite.value = false
+                }
+            }
+        }
     }
 
     fun playTrack(track: Track) {
@@ -100,6 +110,14 @@ class PlayerViewModel(
 
         if (tracks.isNotEmpty() && startIndex < tracks.size) {
             _currentTrack.value = tracks[startIndex]
+            // Check favorite status for initial track
+            viewModelScope.launch {
+                if (userId != -1) {
+                    _isCurrentTrackFavorite.value = musicRepository.isFavorite(userId, tracks[startIndex].trackId)
+                } else {
+                    _isCurrentTrackFavorite.value = false
+                }
+            }
         }
     }
 
