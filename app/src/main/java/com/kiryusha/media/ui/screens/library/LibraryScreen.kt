@@ -55,6 +55,8 @@ fun LibraryScreen(
     val searchQuery by viewModel.searchQuery.collectAsState()
     val searchResults by viewModel.searchResults.collectAsState()
     val playlists by playlistViewModel.userPlaylists.collectAsState()
+    val showTrackSelection by viewModel.showTrackSelection.collectAsState()
+    val availableTracks by viewModel.availableTracks.collectAsState()
 
     var showSearchBar by remember { mutableStateOf(false) }
     var showAddToPlaylistDialog by remember { mutableStateOf<Track?>(null) }
@@ -66,6 +68,19 @@ fun LibraryScreen(
     var showOnboarding by remember { mutableStateOf(tooltipManager.shouldShowOnboarding()) }
     var showLongPressTooltip by remember { mutableStateOf(false) }
     var active by remember { mutableStateOf(false) }
+
+    // Show track selection screen if available
+    if (showTrackSelection) {
+        TrackSelectionScreen(
+            availableTracks = availableTracks,
+            onBackClick = { viewModel.cancelTrackSelection() },
+            onAddToLibrary = { selectedTracks ->
+                viewModel.importSelectedTracks(selectedTracks)
+            }
+        )
+        return
+    }
+
     Scaffold(
         topBar = {
             if (showSearchBar) {
