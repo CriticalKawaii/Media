@@ -16,13 +16,21 @@ import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import com.kiryusha.media.R
 import com.kiryusha.media.activities.MainActivity
+import com.kiryusha.media.utils.AppPreferences
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 class MusicPlayerService : MediaSessionService() {
 
     private var mediaSession: MediaSession? = null
     private lateinit var player: ExoPlayer
     private lateinit var notificationManager: NotificationManager
+    private lateinit var appPreferences: AppPreferences
     private val binder = MusicBinder()
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     companion object {
         private const val NOTIFICATION_ID = 1
@@ -42,6 +50,7 @@ class MusicPlayerService : MediaSessionService() {
     override fun onCreate() {
         super.onCreate()
 
+        appPreferences = AppPreferences(this)
         player = ExoPlayer.Builder(this).build()
 
         mediaSession = MediaSession.Builder(this, player)
@@ -53,14 +62,22 @@ class MusicPlayerService : MediaSessionService() {
         player.addListener(object : Player.Listener {
             override fun onIsPlayingChanged(isPlaying: Boolean) {
                 if (isPlaying) {
-                    startForeground(NOTIFICATION_ID, createNotification())
+                    serviceScope.launch {
+                        if (shouldShowNotification()) {
+                            startForeground(NOTIFICATION_ID, createNotification())
+                        }
+                    }
                 }
             }
 
             override fun onPlaybackStateChanged(playbackState: Int) {
                 when (playbackState) {
                     Player.STATE_READY -> {
-                        notificationManager.notify(NOTIFICATION_ID, createNotification())
+                        serviceScope.launch {
+                            if (shouldShowNotification()) {
+                                notificationManager.notify(NOTIFICATION_ID, createNotification())
+                            }
+                        }
                     }
                     Player.STATE_ENDED -> {
                         if (player.hasNextMediaItem()) {
@@ -71,7 +88,11 @@ class MusicPlayerService : MediaSessionService() {
             }
 
             override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-                notificationManager.notify(NOTIFICATION_ID, createNotification())
+                serviceScope.launch {
+                    if (shouldShowNotification()) {
+                        notificationManager.notify(NOTIFICATION_ID, createNotification())
+                    }
+                }
             }
         })
     }
@@ -105,7 +126,13 @@ class MusicPlayerService : MediaSessionService() {
         }
     }
 
-    private fun createNotification(): Notification {
+    private suspend fun shouldShowNotification(): Boolean {
+        val notificationsEnabled = appPreferences.areNotificationsEnabled().first()
+        val showPlaybackNotifications = appPreferences.shouldShowPlaybackNotifications().first()
+        return notificationsEnabled && showPlaybackNotifications
+    }
+
+    private suspend fun createNotification(): Notification {
         val intent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
         }
@@ -121,7 +148,9 @@ class MusicPlayerService : MediaSessionService() {
         val title = currentItem?.mediaMetadata?.title?.toString() ?: "Music Player"
         val artist = currentItem?.mediaMetadata?.artist?.toString() ?: ""
 
-        return NotificationCompat.Builder(this, CHANNEL_ID)
+        val notificationSoundEnabled = appPreferences.isNotificationSoundEnabled().first()
+
+        val builder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(title)
             .setContentText(artist)
             .setSmallIcon(R.drawable.ic_music_note)
@@ -129,8 +158,13 @@ class MusicPlayerService : MediaSessionService() {
             .setOnlyAlertOnce(true)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setPriority(NotificationCompat.PRIORITY_LOW)
-            .setOngoing(true)  // ✅ Make notification persistent while playing
-            .build()
+            .setOngoing(true)
+
+        if (!notificationSoundEnabled) {
+            builder.setSilent(true)
+        }
+
+        return builder.build()
     }
 
 }
