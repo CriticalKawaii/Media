@@ -71,7 +71,7 @@ class MainActivity : ComponentActivity() {
 
         libraryViewModel = LibraryViewModel(musicRepository, mediaScanner)
         playerViewModel = PlayerViewModel(musicRepository, musicPlayerController)
-        playlistViewModel = PlaylistViewModel(playlistRepository)
+        playlistViewModel = PlaylistViewModel(playlistRepository, musicRepository)
         profileViewModel = ProfileViewModel(userRepository, musicRepository, playlistRepository)
         settingsViewModel = SettingsViewModel(appPreferences)
 
