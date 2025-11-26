@@ -539,10 +539,10 @@ fun AlbumItem(
     onClick: () -> Unit
 ) {
     Card(
+        onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
-            .aspectRatio(1f)
-            .clickable(onClick = onClick),
+            .aspectRatio(1f),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column {
