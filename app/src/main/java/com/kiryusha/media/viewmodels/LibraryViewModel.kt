@@ -90,6 +90,7 @@ class LibraryViewModel(
     fun setUserId(userId: Int) {
         currentUserId = userId
         _userIdFlow.value = userId
+        loadLibrary()
     }
 
     fun scanMediaFiles() {

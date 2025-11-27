@@ -76,18 +76,20 @@ class MusicRepository(
     }
 
     suspend fun importTracks(userId: Int, tracks: List<Track>) {
-        // First, insert tracks into the global tracks table (if they don't exist)
-        trackDao.insertTracks(tracks)
+        // Insert each track and associate it with the user
+        val userTracks = tracks.mapNotNull { track ->
+            // Insert track into global table (will be ignored if already exists due to file_path unique constraint)
+            val insertedId = trackDao.insertTrack(track)
 
-        // Then, associate them with the user
-        val userTracks = tracks.map { track ->
-            // Get the trackId after insertion
-            val existingTrack = trackDao.getAllTracks().first().find { it.filePath == track.filePath }
+            // Get the track by file path (either newly inserted or existing)
+            val existingTrack = trackDao.getTrackByFilePath(track.filePath)
+
             existingTrack?.let {
                 UserTrack(userId = userId, trackId = it.trackId)
             }
-        }.filterNotNull()
+        }
 
+        // Add user-track associations (will be ignored if already exists due to primary key constraint)
         userTrackDao.addUserTracks(userTracks)
     }
 
