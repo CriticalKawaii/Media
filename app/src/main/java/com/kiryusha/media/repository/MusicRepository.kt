@@ -3,10 +3,12 @@ package com.kiryusha.media.repository
 import com.kiryusha.media.database.dao.PlaybackHistoryDao
 import com.kiryusha.media.database.dao.TrackDao
 import com.kiryusha.media.database.dao.UserFavoriteDao
+import com.kiryusha.media.database.dao.UserTrackDao
 import com.kiryusha.media.database.entities.Album
 import com.kiryusha.media.database.entities.PlaybackHistory
 import com.kiryusha.media.database.entities.Track
 import com.kiryusha.media.database.entities.UserFavorite
+import com.kiryusha.media.database.entities.UserTrack
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -15,25 +17,29 @@ import kotlinx.coroutines.withContext
 class MusicRepository(
     private val trackDao: TrackDao,
     private val historyDao: PlaybackHistoryDao,
-    private val userFavoriteDao: UserFavoriteDao
+    private val userFavoriteDao: UserFavoriteDao,
+    private val userTrackDao: UserTrackDao
 ) {
+
+    // User-specific track operations
+    fun getUserTracks(userId: Int): Flow<List<Track>> = userTrackDao.getUserTracks(userId)
 
     fun getAllTracks(): Flow<List<Track>> = trackDao.getAllTracks()
 
     suspend fun getTrackById(trackId: Long): Track? = trackDao.getTrackById(trackId)
 
-    fun getTracksByAlbum(albumName: String): Flow<List<Track>> =
-        trackDao.getTracksByAlbum(albumName)
+    fun getTracksByAlbum(userId: Int, albumName: String): Flow<List<Track>> =
+        userTrackDao.getUserTracksByAlbum(userId, albumName)
 
-    fun getTracksByArtist(artistName: String): Flow<List<Track>> =
-        trackDao.getTracksByArtist(artistName)
+    fun getTracksByArtist(userId: Int, artistName: String): Flow<List<Track>> =
+        userTrackDao.getUserTracksByArtist(userId, artistName)
 
     fun getFavoriteTracks(userId: Int): Flow<List<Track>> = userFavoriteDao.getFavoriteTracksForUser(userId)
 
-    fun searchTracks(query: String): Flow<List<Track>> = trackDao.searchTracks(query)
+    fun searchTracks(userId: Int, query: String): Flow<List<Track>> = userTrackDao.searchUserTracks(userId, query)
 
-    suspend fun getAllAlbums(): List<Album> = withContext(Dispatchers.IO) {
-        val albumInfos = trackDao.getAllAlbums()
+    suspend fun getAllAlbums(userId: Int): List<Album> = withContext(Dispatchers.IO) {
+        val albumInfos = userTrackDao.getUserAlbums(userId)
         albumInfos.map { info ->
             Album(
                 name = info.album,
@@ -44,8 +50,8 @@ class MusicRepository(
         }
     }
 
-    suspend fun getAlbumWithTracks(albumName: String): Album? = withContext(Dispatchers.IO) {
-        val tracksList = trackDao.getTracksByAlbum(albumName).first()
+    suspend fun getAlbumWithTracks(userId: Int, albumName: String): Album? = withContext(Dispatchers.IO) {
+        val tracksList = userTrackDao.getUserTracksByAlbum(userId, albumName).first()
 
         if (tracksList.isEmpty()) return@withContext null
 
@@ -69,11 +75,23 @@ class MusicRepository(
         return userFavoriteDao.isFavorite(userId, trackId) > 0
     }
 
-    suspend fun importTracks(tracks: List<Track>) {
+    suspend fun importTracks(userId: Int, tracks: List<Track>) {
+        // First, insert tracks into the global tracks table (if they don't exist)
         trackDao.insertTracks(tracks)
+
+        // Then, associate them with the user
+        val userTracks = tracks.map { track ->
+            // Get the trackId after insertion
+            val existingTrack = trackDao.getAllTracks().first().find { it.filePath == track.filePath }
+            existingTrack?.let {
+                UserTrack(userId = userId, trackId = it.trackId)
+            }
+        }.filterNotNull()
+
+        userTrackDao.addUserTracks(userTracks)
     }
 
-    suspend fun getTrackCount(): Int = trackDao.getTrackCount()
+    suspend fun getTrackCount(userId: Int): Int = userTrackDao.getUserTrackCount(userId)
 
     suspend fun recordPlay(trackId: Long, userId: Int) {
         trackDao.incrementPlayCount(trackId)
@@ -93,19 +111,23 @@ class MusicRepository(
 
     suspend fun getUserStats(userId: Int): UserStats {
         return UserStats(
-            totalTracks = trackDao.getTrackCount(),
+            totalTracks = userTrackDao.getUserTrackCount(userId),
             totalPlays = historyDao.getTotalPlays(userId),
             uniqueTracksPlayed = historyDao.getUniqueTracksPlayed(userId)
         )
     }
 
-    suspend fun deleteTrack(track: Track) {
-        trackDao.deleteTrack(track)
+    suspend fun deleteTrack(userId: Int, track: Track) {
+        // Remove from user's library only
+        userTrackDao.removeUserTrack(userId, track.trackId)
+
+        // Optional: Clean up orphaned tracks (tracks not in any user's library)
+        // We'll keep tracks in the global table for now to avoid data loss
     }
 
-    suspend fun deleteTracks(tracks: List<Track>) {
+    suspend fun deleteTracks(userId: Int, tracks: List<Track>) {
         tracks.forEach { track ->
-            trackDao.deleteTrack(track)
+            userTrackDao.removeUserTrack(userId, track.trackId)
         }
     }
 }

@@ -274,7 +274,7 @@ fun LibraryScreen(
                                         albums = albums,
                                         onAlbumClick = { album ->
                                             viewModel.viewModelScope.launch {
-                                                val fullAlbum = viewModel.musicRepository.getAlbumWithTracks(album.name)
+                                                val fullAlbum = viewModel.getAlbumWithTracks(album.name)
                                                 if (fullAlbum != null) {
                                                     onAlbumClick(fullAlbum)
                                                 }

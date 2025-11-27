@@ -8,6 +8,7 @@ import com.kiryusha.media.database.dao.PlaylistDao
 import com.kiryusha.media.database.dao.TrackDao
 import com.kiryusha.media.database.dao.UserDao
 import com.kiryusha.media.database.dao.UserFavoriteDao
+import com.kiryusha.media.database.dao.UserTrackDao
 import com.kiryusha.media.database.entities.*
 
 @Database(
@@ -17,9 +18,10 @@ import com.kiryusha.media.database.entities.*
         Playlist::class,
         PlaylistTrackCrossRef::class,
         PlaybackHistory::class,
-        UserFavorite::class
+        UserFavorite::class,
+        UserTrack::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -29,4 +31,5 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun playlistDao(): PlaylistDao
     abstract fun playbackHistoryDao(): PlaybackHistoryDao
     abstract fun userFavoriteDao(): UserFavoriteDao
+    abstract fun userTrackDao(): UserTrackDao
 }

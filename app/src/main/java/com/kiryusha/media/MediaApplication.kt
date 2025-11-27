@@ -60,6 +60,35 @@ class MediaApplication : Application() {
                 db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_tracks_file_path ON tracks(file_path)")
             }
         }
+
+        private val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Create user_tracks table for per-user library isolation
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS user_tracks (
+                        userId INTEGER NOT NULL,
+                        trackId INTEGER NOT NULL,
+                        added_at INTEGER NOT NULL,
+                        PRIMARY KEY(userId, trackId),
+                        FOREIGN KEY(userId) REFERENCES user(uid) ON DELETE CASCADE,
+                        FOREIGN KEY(trackId) REFERENCES tracks(trackId) ON DELETE CASCADE
+                    )
+                """.trimIndent())
+
+                // Create indices for user_tracks
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_user_tracks_userId ON user_tracks(userId)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_user_tracks_trackId ON user_tracks(trackId)")
+
+                // Migrate existing tracks to all users (backwards compatibility)
+                // This ensures existing users see all existing tracks in their library
+                db.execSQL("""
+                    INSERT INTO user_tracks (userId, trackId, added_at)
+                    SELECT u.uid, t.trackId, t.date_added
+                    FROM user u
+                    CROSS JOIN tracks t
+                """.trimIndent())
+            }
+        }
     }
 
     override fun onCreate() {
@@ -71,7 +100,7 @@ class MediaApplication : Application() {
             AppDatabase::class.java,
             "media-database"
         )
-            .addMigrations(MIGRATION_4_5)
+            .addMigrations(MIGRATION_4_5, MIGRATION_5_6)
             .fallbackToDestructiveMigration()
             .build()
     }

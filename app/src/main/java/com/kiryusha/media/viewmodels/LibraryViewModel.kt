@@ -9,6 +9,7 @@ import com.kiryusha.media.utils.MediaScanner
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.combine
 
 class LibraryViewModel(
     val musicRepository: MusicRepository,
@@ -27,7 +28,14 @@ class LibraryViewModel(
     private var currentUserId: Int = -1
     private val _userIdFlow = MutableStateFlow(-1)
 
-    val allTracks: StateFlow<List<Track>> = musicRepository.getAllTracks()
+    val allTracks: StateFlow<List<Track>> = _userIdFlow
+        .flatMapLatest { userId ->
+            if (userId == -1) {
+                flowOf(emptyList())
+            } else {
+                musicRepository.getUserTracks(userId)
+            }
+        }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
@@ -48,14 +56,16 @@ class LibraryViewModel(
             initialValue = emptyList()
         )
 
-    val searchResults: StateFlow<List<Track>> = searchQuery
+    val searchResults: StateFlow<List<Track>> = combine(searchQuery, _userIdFlow) { query, userId ->
+        Pair(query, userId)
+    }
         .debounce(300)
         .distinctUntilChanged()
-        .flatMapLatest { query ->
-            if (query.isBlank()) {
+        .flatMapLatest { (query, userId) ->
+            if (query.isBlank() || userId == -1) {
                 flowOf(emptyList())
             } else {
-                musicRepository.searchTracks(query)
+                musicRepository.searchTracks(userId, query)
             }
         }
         .stateIn(
@@ -109,11 +119,12 @@ class LibraryViewModel(
     }
 
     fun importSelectedTracks(selectedTracks: List<Track>) {
+        if (currentUserId == -1) return
         viewModelScope.launch {
             _uiState.value = LibraryUiState.Loading
             try {
                 if (selectedTracks.isNotEmpty()) {
-                    musicRepository.importTracks(selectedTracks)
+                    musicRepository.importTracks(currentUserId, selectedTracks)
                     _uiState.value = LibraryUiState.Success("Added ${selectedTracks.size} tracks to library")
                     loadAlbums()
                 }
@@ -132,10 +143,11 @@ class LibraryViewModel(
     }
 
     fun loadLibrary() {
+        if (currentUserId == -1) return
         viewModelScope.launch {
             _uiState.value = LibraryUiState.Loading
             try {
-                val trackCount = musicRepository.getTrackCount()
+                val trackCount = musicRepository.getTrackCount(currentUserId)
                 if (trackCount == 0) {
                     _uiState.value = LibraryUiState.Empty
                 } else {
@@ -149,9 +161,10 @@ class LibraryViewModel(
     }
 
     private fun loadAlbums() {
+        if (currentUserId == -1) return
         viewModelScope.launch {
             try {
-                val albumList = musicRepository.getAllAlbums()
+                val albumList = musicRepository.getAllAlbums(currentUserId)
                 _albums.value = albumList
             } catch (e: Exception) {
                 _uiState.value = LibraryUiState.Error("Error loading albums: ${e.message}")
@@ -187,9 +200,10 @@ class LibraryViewModel(
     }
 
     fun deleteTrack(track: Track) {
+        if (currentUserId == -1) return
         viewModelScope.launch {
             try {
-                musicRepository.deleteTrack(track)
+                musicRepository.deleteTrack(currentUserId, track)
                 _uiState.value = LibraryUiState.Success("Track removed from library")
                 loadAlbums()
             } catch (e: Exception) {
@@ -199,15 +213,21 @@ class LibraryViewModel(
     }
 
     fun deleteTracks(tracks: List<Track>) {
+        if (currentUserId == -1) return
         viewModelScope.launch {
             try {
-                musicRepository.deleteTracks(tracks)
+                musicRepository.deleteTracks(currentUserId, tracks)
                 _uiState.value = LibraryUiState.Success("${tracks.size} tracks removed from library")
                 loadAlbums()
             } catch (e: Exception) {
                 _uiState.value = LibraryUiState.Error("Failed to remove tracks: ${e.message}")
             }
         }
+    }
+
+    suspend fun getAlbumWithTracks(albumName: String): Album? {
+        if (currentUserId == -1) return null
+        return musicRepository.getAlbumWithTracks(currentUserId, albumName)
     }
 }
 
