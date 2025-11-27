@@ -197,7 +197,12 @@ class MusicPlayerController(private val context: Context) {
     }
 
     fun release() {
+        // Stop playback and clear the playlist
+        exoPlayer?.stop()
+        exoPlayer?.clearMediaItems()
+        // Unbind from service - let the service manage its own lifecycle
         unbindService()
-        exoPlayer?.release()
+        // Don't release the player here as it's owned by the service
+        exoPlayer = null
     }
 }
