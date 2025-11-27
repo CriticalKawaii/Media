@@ -64,7 +64,8 @@ class MainActivity : ComponentActivity() {
         val musicRepository = MusicRepository(
             database.trackDao(),
             database.playbackHistoryDao(),
-            database.userFavoriteDao()
+            database.userFavoriteDao(),
+            database.userTrackDao()
         )
         val playlistRepository = PlaylistRepository(database.playlistDao())
         val userRepository = UserRepository(database.userDao())
