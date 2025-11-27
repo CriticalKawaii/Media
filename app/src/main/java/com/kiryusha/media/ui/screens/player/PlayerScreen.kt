@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import com.kiryusha.media.api.lyrics.LyricsResult
 import com.kiryusha.media.database.entities.Track
 import com.kiryusha.media.ui.screens.library.AddToPlaylistDialog
 import com.kiryusha.media.viewmodels.PlayerViewModel
@@ -65,6 +66,8 @@ fun PlayerScreen(
     var showExpandedArt by remember { mutableStateOf(false) }
     var showAddToPlaylistDialog by remember { mutableStateOf(false) }
     var showQueueDialog by remember { mutableStateOf(false) }
+    var showLyricsDialog by remember { mutableStateOf(false) }
+    val lyricsState by viewModel.lyricsState.collectAsState()
     val context = LocalContext.current
 
     Scaffold(
@@ -213,6 +216,12 @@ fun PlayerScreen(
                                 tint = if (isCurrentTrackFavorite) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
                             )
                         }
+                        IconButton(onClick = {
+                            viewModel.fetchLyrics()
+                            showLyricsDialog = true
+                        }) {
+                            Icon(Icons.Filled.Lyrics, "Lyrics")
+                        }
                     }
                 }
             } ?: run {
@@ -280,6 +289,19 @@ fun PlayerScreen(
                 onReorder = { fromIndex, toIndex ->
                     viewModel.reorderQueue(fromIndex, toIndex)
                 }
+            )
+        }
+
+        // Lyrics Dialog
+        if (showLyricsDialog && currentTrack != null) {
+            LyricsDialog(
+                track = currentTrack!!,
+                lyricsState = lyricsState,
+                onDismiss = {
+                    showLyricsDialog = false
+                    viewModel.clearLyricsState()
+                },
+                onRetry = { viewModel.fetchLyrics() }
             )
         }
     }
@@ -716,6 +738,155 @@ fun QueueDialog(
                                             )
                                         }
                                     }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun LyricsDialog(
+    track: Track,
+    lyricsState: LyricsResult,
+    onDismiss: () -> Unit,
+    onRetry: () -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.85f),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Column(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                // Header
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = track.title,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = track.artist,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Filled.Close, "Close")
+                    }
+                }
+
+                HorizontalDivider()
+
+                // Lyrics content
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    when (lyricsState) {
+                        is LyricsResult.Loading -> {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                CircularProgressIndicator()
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Text(
+                                    text = "Fetching lyrics...",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                        is LyricsResult.Success -> {
+                            LazyColumn(
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(8.dp)
+                            ) {
+                                item {
+                                    Text(
+                                        text = lyricsState.lyrics,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        lineHeight = MaterialTheme.typography.bodyLarge.fontSize.times(1.5f)
+                                    )
+                                }
+                            }
+                        }
+                        is LyricsResult.NotFound -> {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.MusicNote,
+                                    contentDescription = "No lyrics",
+                                    modifier = Modifier.size(64.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Text(
+                                    text = "Lyrics not found",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "We couldn't find lyrics for this song",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                )
+                            }
+                        }
+                        is LyricsResult.Error -> {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Error,
+                                    contentDescription = "Error",
+                                    modifier = Modifier.size(64.dp),
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Text(
+                                    text = "Error loading lyrics",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = lyricsState.message,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Button(onClick = onRetry) {
+                                    Icon(Icons.Filled.Refresh, "Retry", modifier = Modifier.size(18.dp))
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Retry")
                                 }
                             }
                         }

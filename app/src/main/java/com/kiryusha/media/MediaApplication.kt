@@ -89,6 +89,13 @@ class MediaApplication : Application() {
                 """.trimIndent())
             }
         }
+
+        private val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Add lyrics column to tracks table
+                db.execSQL("ALTER TABLE tracks ADD COLUMN lyrics TEXT DEFAULT NULL")
+            }
+        }
     }
 
     override fun onCreate() {
@@ -100,7 +107,7 @@ class MediaApplication : Application() {
             AppDatabase::class.java,
             "media-database"
         )
-            .addMigrations(MIGRATION_4_5, MIGRATION_5_6)
+            .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
             .fallbackToDestructiveMigration()
             .build()
     }

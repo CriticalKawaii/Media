@@ -35,7 +35,10 @@ data class Track(
     val dateAdded: Long = System.currentTimeMillis(),
 
     @ColumnInfo(name = "play_count")
-    val playCount: Int = 0
+    val playCount: Int = 0,
+
+    @ColumnInfo(name = "lyrics")
+    val lyrics: String? = null
 ) {
     fun getDurationFormatted(): String {
         val totalSeconds = durationMs / 1000

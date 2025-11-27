@@ -21,7 +21,7 @@ import com.kiryusha.media.database.entities.*
         UserFavorite::class,
         UserTrack::class
     ],
-    version = 6,
+    version = 7,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
