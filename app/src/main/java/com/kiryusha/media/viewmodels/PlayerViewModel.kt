@@ -207,6 +207,14 @@ class PlayerViewModel(
         playerController.skipToPrevious()
     }
 
+    fun skipToIndex(index: Int) {
+        val currentPlaylist = _playlist.value
+        if (index >= 0 && index < currentPlaylist.size) {
+            _currentIndex.value = index
+            playerController.skipToIndex(index)
+        }
+    }
+
     fun seekTo(position: Long) {
         playerController.seekTo(position)
         _currentPosition.value = position

@@ -137,6 +137,14 @@ class MusicPlayerController(private val context: Context) {
         }
     }
 
+    fun skipToIndex(index: Int) {
+        exoPlayer?.let { player ->
+            if (index >= 0 && index < player.mediaItemCount) {
+                player.seekTo(index, 0)
+            }
+        }
+    }
+
     fun getCurrentPosition(): Long {
         return exoPlayer?.currentPosition ?: 0L
     }
