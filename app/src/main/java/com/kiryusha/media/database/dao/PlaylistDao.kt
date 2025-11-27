@@ -4,6 +4,7 @@ import androidx.room.*
 import com.kiryusha.media.database.entities.Playlist
 import com.kiryusha.media.database.entities.PlaylistTrackCrossRef
 import com.kiryusha.media.database.entities.PlaylistWithTracks
+import com.kiryusha.media.database.entities.Track
 import kotlinx.coroutines.flow.Flow
 
 @Dao

@@ -31,7 +31,6 @@ class LoginActivity : AppCompatActivity() {
 
         appPreferences = AppPreferences(this)
 
-        // Check if already logged in
         lifecycleScope.launch {
             val isLoggedIn = appPreferences.isLoggedIn().first()
             if (isLoggedIn) {

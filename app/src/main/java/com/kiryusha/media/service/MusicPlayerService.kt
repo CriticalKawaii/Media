@@ -13,10 +13,12 @@ import android.graphics.drawable.BitmapDrawable
 import android.os.Binder
 import android.os.Build
 import android.os.IBinder
+import androidx.annotation.OptIn
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
@@ -190,6 +192,7 @@ class MusicPlayerService : MediaSessionService() {
         return notificationsEnabled && showPlaybackNotifications
     }
 
+    @OptIn(UnstableApi::class)
     private suspend fun createNotification(): Notification {
         val intent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_SINGLE_TOP

@@ -80,7 +80,6 @@ class RegistrationActivity : AppCompatActivity() {
     }
 
     private fun openPrivacyPolicy() {
-        // Ссылка на ФЗ-152 "О персональных данных"
         val url = "http://www.consultant.ru/document/cons_doc_LAW_61801/"
         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
         try {
@@ -98,12 +97,10 @@ class RegistrationActivity : AppCompatActivity() {
         val fullText = "Я согласен на обработку персональных данных в соответствии с ФЗ-152"
         val spannableString = SpannableString(fullText)
 
-        // Находим позицию текста "ФЗ-152"
         val linkText = "ФЗ-152"
         val startIndex = fullText.indexOf(linkText)
         val endIndex = startIndex + linkText.length
 
-        // Создаем кликабельный спан
         val clickableSpan = object : ClickableSpan() {
             override fun onClick(widget: View) {
                 openPrivacyPolicy()

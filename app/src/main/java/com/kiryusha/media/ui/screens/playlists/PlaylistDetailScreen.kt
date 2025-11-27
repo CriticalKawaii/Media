@@ -21,6 +21,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.kiryusha.media.database.entities.Track
@@ -66,7 +67,6 @@ fun PlaylistDetailScreen(
                 tracks = tracks.toMutableList().apply {
                     add(to.index, removeAt(from.index))
                 }
-                // Persist the new order to database
                 val trackIds = tracks.map { it.trackId }
                 viewModel.updateTrackPositions(playlistId, trackIds)
             }
@@ -144,7 +144,6 @@ fun PlaylistDetailScreen(
                                 EmptyPlaylistMessage()
                             } else {
                                 if (isFavoritesPlaylist) {
-                                    // Favorites playlist: no reordering, no swipe-to-delete
                                     LazyColumn(
                                         modifier = Modifier.fillMaxSize(),
                                         contentPadding = PaddingValues(16.dp),
@@ -159,7 +158,6 @@ fun PlaylistDetailScreen(
                                         }
                                     }
                                 } else {
-                                    // Regular playlist: with reordering and swipe-to-delete
                                     LazyColumn(
                                         state = reorderableState.listState,
                                         modifier = Modifier
@@ -211,7 +209,6 @@ fun PlaylistDetailScreen(
             }
         }
 
-        // Delete confirmation
         if (showDeleteConfirmation) {
             AlertDialog(
                 onDismissRequest = { showDeleteConfirmation = false },
@@ -384,7 +381,6 @@ fun SwipeablePlaylistTrackItem(
                 modifier = Modifier.padding(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Drag handle
                 Icon(
                     imageVector = Icons.Filled.DragHandle,
                     contentDescription = "Reorder",
@@ -619,7 +615,6 @@ fun AddTracksToPlaylistDialog(
             Column(
                 modifier = Modifier.fillMaxSize()
             ) {
-                // Header
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -637,7 +632,6 @@ fun AddTracksToPlaylistDialog(
                     }
                 }
 
-                // Search bar
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
@@ -655,7 +649,6 @@ fun AddTracksToPlaylistDialog(
 
                 HorizontalDivider()
 
-                // Track list
                 if (availableTracks.isEmpty()) {
                     Box(
                         modifier = Modifier.fillMaxSize(),

@@ -126,7 +126,6 @@ fun PlaylistItem(
         Column(
             modifier = Modifier.padding(12.dp)
         ) {
-            // Playlist cover (first track's album art or default)
             val coverUri = playlistWithTracks.tracks.firstOrNull()?.albumArtUri
 
             AsyncImage(

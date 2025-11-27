@@ -7,7 +7,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.kiryusha.media.ui.screens.library.LibraryScreen
-import com.kiryusha.media.ui.screens.playlists.PlayerScreen
+import com.kiryusha.media.ui.screens.player.PlayerScreen
 import com.kiryusha.media.ui.screens.playlists.PlaylistsScreen
 import com.kiryusha.media.ui.screens.playlists.PlaylistDetailScreen
 import com.kiryusha.media.ui.screens.profile.ProfileScreen
