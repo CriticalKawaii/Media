@@ -63,6 +63,38 @@ class PlayerViewModel(
                 }
             }
         }
+
+        // Observe media item changes from controller
+        viewModelScope.launch {
+            playerController.currentMediaItemIndex.collect { index ->
+                val currentPlaylist = _playlist.value
+                if (currentPlaylist.isNotEmpty() && index < currentPlaylist.size && index >= 0) {
+                    _currentIndex.value = index
+                    val track = currentPlaylist[index]
+                    _currentTrack.value = track
+
+                    // Update favorite status
+                    try {
+                        if (userId != -1) {
+                            _isCurrentTrackFavorite.value = musicRepository.isFavorite(userId, track.trackId)
+                        } else {
+                            _isCurrentTrackFavorite.value = false
+                        }
+                    } catch (e: Exception) {
+                        _isCurrentTrackFavorite.value = false
+                    }
+
+                    // Record play in history
+                    try {
+                        if (userId != -1) {
+                            musicRepository.recordPlay(track.trackId, userId)
+                        }
+                    } catch (e: Exception) {
+                        // Silently ignore playback recording errors
+                    }
+                }
+            }
+        }
     }
 
     fun setUserId(id: Int) {
@@ -151,50 +183,19 @@ class PlayerViewModel(
     }
 
     fun skipNext() {
-        viewModelScope.launch {
-            val currentPlaylist = _playlist.value
-            if (currentPlaylist.isEmpty()) return@launch
-
-            val nextIndex = when {
-                _shuffleEnabled.value -> {
-                    val availableIndices = currentPlaylist.indices.filter { it != _currentIndex.value }
-                    if (availableIndices.isEmpty()) {
-                        currentPlaylist.indices.random()
-                    } else {
-                        availableIndices.random()
-                    }
-                }
-                _currentIndex.value < currentPlaylist.size - 1 -> _currentIndex.value + 1
-                _repeatMode.value == RepeatMode.ALL -> 0
-                else -> return@launch
-            }
-
-            _currentIndex.value = nextIndex
-            playTrack(currentPlaylist[nextIndex])
-        }
+        // Use player's built-in next functionality to preserve playlist
+        playerController.skipToNext()
     }
 
-
     fun skipPrevious() {
-        viewModelScope.launch {
-            val currentPlaylist = _playlist.value
-            if (currentPlaylist.isEmpty()) return@launch
-
-            // If more than 3 seconds played, restart current track
-            if (_currentPosition.value > 3000) {
-                seekTo(0L)
-                return@launch
-            }
-
-            val previousIndex = when {
-                _currentIndex.value > 0 -> _currentIndex.value - 1
-                _repeatMode.value == RepeatMode.ALL -> currentPlaylist.size - 1
-                else -> 0
-            }
-
-            _currentIndex.value = previousIndex
-            playTrack(currentPlaylist[previousIndex])
+        // If more than 3 seconds played, restart current track
+        if (_currentPosition.value > 3000) {
+            seekTo(0L)
+            return
         }
+
+        // Use player's built-in previous functionality to preserve playlist
+        playerController.skipToPrevious()
     }
 
     fun seekTo(position: Long) {

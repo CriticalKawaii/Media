@@ -29,6 +29,9 @@ class MusicPlayerController(private val context: Context) {
     private val _duration = MutableStateFlow(0L)
     val duration: StateFlow<Long> = _duration
 
+    private val _currentMediaItemIndex = MutableStateFlow(0)
+    val currentMediaItemIndex: StateFlow<Int> = _currentMediaItemIndex
+
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             val binder = service as? MusicPlayerService.MusicBinder
@@ -69,7 +72,15 @@ class MusicPlayerController(private val context: Context) {
                     _duration.value = exoPlayer?.duration ?: 0L
                 }
             }
+
+            override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                _currentMediaItemIndex.value = exoPlayer?.currentMediaItemIndex ?: 0
+                _duration.value = exoPlayer?.duration ?: 0L
+            }
         })
+
+        // Initialize current media item index
+        _currentMediaItemIndex.value = exoPlayer?.currentMediaItemIndex ?: 0
     }
 
     fun playTrack(track: Track) {
@@ -78,6 +89,13 @@ class MusicPlayerController(private val context: Context) {
                 val mediaItem = MediaItem.Builder()
                     .setUri(track.filePath.toUri())
                     .setMediaId(track.trackId.toString())
+                    .setMediaMetadata(
+                        androidx.media3.common.MediaMetadata.Builder()
+                            .setTitle(track.title)
+                            .setArtist(track.artist)
+                            .setArtworkUri(track.albumArt?.toUri())
+                            .build()
+                    )
                     .build()
 
                 player.apply {
@@ -104,11 +122,19 @@ class MusicPlayerController(private val context: Context) {
     }
 
     fun skipToNext() {
-        exoPlayer?.seekToNext()
+        exoPlayer?.let { player ->
+            if (player.hasNextMediaItem()) {
+                player.seekToNextMediaItem()
+            }
+        }
     }
 
     fun skipToPrevious() {
-        exoPlayer?.seekToPrevious()
+        exoPlayer?.let { player ->
+            if (player.hasPreviousMediaItem()) {
+                player.seekToPreviousMediaItem()
+            }
+        }
     }
 
     fun getCurrentPosition(): Long {
@@ -130,6 +156,13 @@ class MusicPlayerController(private val context: Context) {
                     MediaItem.Builder()
                         .setUri(track.filePath.toUri())
                         .setMediaId(track.trackId.toString())
+                        .setMediaMetadata(
+                            androidx.media3.common.MediaMetadata.Builder()
+                                .setTitle(track.title)
+                                .setArtist(track.artist)
+                                .setArtworkUri(track.albumArt?.toUri())
+                                .build()
+                        )
                         .build()
                 }
 
@@ -150,6 +183,13 @@ class MusicPlayerController(private val context: Context) {
                 val mediaItem = MediaItem.Builder()
                     .setUri(track.filePath.toUri())
                     .setMediaId(track.trackId.toString())
+                    .setMediaMetadata(
+                        androidx.media3.common.MediaMetadata.Builder()
+                            .setTitle(track.title)
+                            .setArtist(track.artist)
+                            .setArtworkUri(track.albumArt?.toUri())
+                            .build()
+                    )
                     .build()
 
                 player.addMediaItem(mediaItem)
@@ -166,6 +206,13 @@ class MusicPlayerController(private val context: Context) {
                     MediaItem.Builder()
                         .setUri(track.filePath.toUri())
                         .setMediaId(track.trackId.toString())
+                        .setMediaMetadata(
+                            androidx.media3.common.MediaMetadata.Builder()
+                                .setTitle(track.title)
+                                .setArtist(track.artist)
+                                .setArtworkUri(track.albumArt?.toUri())
+                                .build()
+                        )
                         .build()
                 }
 
