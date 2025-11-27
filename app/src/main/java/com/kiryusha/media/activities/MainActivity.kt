@@ -82,12 +82,14 @@ class MainActivity : ComponentActivity() {
             LaunchedEffect(Unit) {
                 appPreferences.getUserId().collect { userId ->
                     val id = userId ?: -1
-                    currentUserId = id
-                    if (id != -1) {
-                        playerViewModel.setUserId(id)
-                        playlistViewModel.setUserId(id)
-                        libraryViewModel.setUserId(id)
-                        profileViewModel.loadUserProfile(id)
+                    if (id != currentUserId) {
+                        currentUserId = id
+                        if (id != -1) {
+                            playerViewModel.setUserId(id)
+                            playlistViewModel.setUserId(id)
+                            libraryViewModel.setUserId(id)
+                            profileViewModel.loadUserProfile(id)
+                        }
                     }
                 }
             }
@@ -130,6 +132,8 @@ class MainActivity : ComponentActivity() {
         lifecycleScope.launch {
             appPreferences.clearSession()
             musicPlayerController.release()
+            // Stop the music service to ensure clean state
+            stopService(Intent(this@MainActivity, com.kiryusha.media.service.MusicPlayerService::class.java))
             startActivity(Intent(this@MainActivity, LoginActivity::class.java))
             finish()
         }
