@@ -265,8 +265,7 @@ fun PlayerScreen(
                 onTrackClick = { track ->
                     val index = playlist.indexOf(track)
                     if (index >= 0) {
-                        viewModel.setPlaylist(playlist, index)
-                        viewModel.playTrack(track)
+                        viewModel.skipToIndex(index)
                     }
                     showQueueDialog = false
                 },
