@@ -309,6 +309,20 @@ class MusicPlayerController(private val context: Context) {
         }
     }
 
+    fun reorderQueue(fromIndex: Int, toIndex: Int) {
+        exoPlayer?.let { player ->
+            try {
+                if (fromIndex >= 0 && fromIndex < player.mediaItemCount &&
+                    toIndex >= 0 && toIndex < player.mediaItemCount &&
+                    fromIndex != toIndex) {
+                    player.moveMediaItem(fromIndex, toIndex)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
     fun release() {
         // Stop playback and clear the playlist
         exoPlayer?.stop()

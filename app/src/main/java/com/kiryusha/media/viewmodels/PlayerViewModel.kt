@@ -318,6 +318,39 @@ class PlayerViewModel(
         playerController.addTracksNext(tracks)
     }
 
+    fun reorderQueue(fromIndex: Int, toIndex: Int) {
+        val currentPlaylist = _playlist.value.toMutableList()
+
+        if (fromIndex >= 0 && fromIndex < currentPlaylist.size &&
+            toIndex >= 0 && toIndex < currentPlaylist.size &&
+            fromIndex != toIndex) {
+
+            // Reorder in local playlist
+            val movedTrack = currentPlaylist.removeAt(fromIndex)
+            currentPlaylist.add(toIndex, movedTrack)
+            _playlist.value = currentPlaylist
+
+            // Update current index if needed
+            when {
+                fromIndex == _currentIndex.value -> {
+                    // Currently playing track was moved
+                    _currentIndex.value = toIndex
+                }
+                fromIndex < _currentIndex.value && toIndex >= _currentIndex.value -> {
+                    // Track moved from before to after/at current position
+                    _currentIndex.value = _currentIndex.value - 1
+                }
+                fromIndex > _currentIndex.value && toIndex <= _currentIndex.value -> {
+                    // Track moved from after to before/at current position
+                    _currentIndex.value = _currentIndex.value + 1
+                }
+            }
+
+            // Reorder in player controller
+            playerController.reorderQueue(fromIndex, toIndex)
+        }
+    }
+
     fun toggleFavorite(trackId: Long, isFavorite: Boolean) {
         if (userId == -1) return
         viewModelScope.launch {
