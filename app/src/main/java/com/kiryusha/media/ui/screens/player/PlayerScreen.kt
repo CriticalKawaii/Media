@@ -1,9 +1,10 @@
-package com.kiryusha.media.ui.screens.playlists
+package com.kiryusha.media.ui.screens.player
 
 import android.content.Intent
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
@@ -11,6 +12,7 @@ import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items as lazyItems
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -25,17 +27,20 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
-import com.kiryusha.media.database.entities.PlaylistWithTracks
 import com.kiryusha.media.database.entities.Track
 import com.kiryusha.media.ui.screens.library.AddToPlaylistDialog
 import com.kiryusha.media.viewmodels.PlayerViewModel
-import com.kiryusha.media.viewmodels.PlaylistUiState
 import com.kiryusha.media.viewmodels.PlaylistViewModel
 import com.kiryusha.media.viewmodels.RepeatMode
+import org.burnoutcrew.reorderable.ReorderableItem
+import org.burnoutcrew.reorderable.detectReorderAfterLongPress
+import org.burnoutcrew.reorderable.rememberReorderableLazyListState
+import org.burnoutcrew.reorderable.reorderable
 import kotlin.math.abs
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -271,6 +276,9 @@ fun PlayerScreen(
                 },
                 onRemoveTrack = { track ->
                     viewModel.removeTrackFromQueue(track)
+                },
+                onReorder = { fromIndex, toIndex ->
+                    viewModel.reorderQueue(fromIndex, toIndex)
                 }
             )
         }
@@ -527,14 +535,27 @@ fun formatTime(millis: Long): String {
     return String.format("%d:%02d", minutes, seconds)
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun QueueDialog(
     playlist: List<Track>,
     currentTrack: Track?,
     onDismiss: () -> Unit,
     onTrackClick: (Track) -> Unit,
-    onRemoveTrack: (Track) -> Unit
+    onRemoveTrack: (Track) -> Unit,
+    onReorder: (fromIndex: Int, toIndex: Int) -> Unit
 ) {
+    var tracks by remember(playlist) { mutableStateOf(playlist) }
+
+    val reorderableState = rememberReorderableLazyListState(
+        onMove = { from, to ->
+            tracks = tracks.toMutableList().apply {
+                add(to.index, removeAt(from.index))
+            }
+            onReorder(from.index, to.index)
+        }
+    )
+
     Dialog(onDismissRequest = onDismiss) {
         Card(
             modifier = Modifier
@@ -554,7 +575,7 @@ fun QueueDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Queue (${playlist.size} tracks)",
+                        text = "Queue (${tracks.size} tracks)",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
@@ -566,7 +587,7 @@ fun QueueDialog(
                 HorizontalDivider()
 
                 // Track list
-                if (playlist.isEmpty()) {
+                if (tracks.isEmpty()) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
@@ -584,91 +605,116 @@ fun QueueDialog(
                     }
                 } else {
                     LazyColumn(
+                        state = reorderableState.listState,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .reorderable(reorderableState),
                         contentPadding = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        items(playlist.size) { index ->
-                            val track = playlist[index]
-                            val isCurrentTrack = track.trackId == currentTrack?.trackId
+                        itemsIndexed(tracks, key = { _, track -> track.trackId }) { index, track ->
+                            ReorderableItem(reorderableState, key = track.trackId) { isDragging ->
+                                val isCurrentTrack = track.trackId == currentTrack?.trackId
 
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { onTrackClick(track) },
-                                colors = CardDefaults.cardColors(
-                                    containerColor = if (isCurrentTrack)
-                                        MaterialTheme.colorScheme.primaryContainer
-                                    else
-                                        MaterialTheme.colorScheme.surface
-                                )
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(12.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = "${index + 1}",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = if (isCurrentTrack)
-                                            MaterialTheme.colorScheme.primary
+                                Card(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { onTrackClick(track) }
+                                        .graphicsLayer {
+                                            val scale = if (isDragging) 1.05f else 1f
+                                            scaleX = scale
+                                            scaleY = scale
+                                            shadowElevation = if (isDragging) 8f else 2f
+                                        },
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = if (isCurrentTrack)
+                                            MaterialTheme.colorScheme.primaryContainer
+                                        else if (isDragging)
+                                            MaterialTheme.colorScheme.surfaceVariant
                                         else
-                                            MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.width(32.dp)
+                                            MaterialTheme.colorScheme.surface
                                     )
-
-                                    AsyncImage(
-                                        model = track.albumArtUri,
-                                        contentDescription = track.title,
+                                ) {
+                                    Row(
                                         modifier = Modifier
-                                            .size(48.dp)
-                                            .clip(RoundedCornerShape(4.dp)),
-                                        contentScale = ContentScale.Crop
-                                    )
+                                            .padding(12.dp)
+                                            .detectReorderAfterLongPress(reorderableState),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        // Drag handle
+                                        Icon(
+                                            imageVector = Icons.Filled.DragHandle,
+                                            contentDescription = "Reorder",
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.size(24.dp)
+                                        )
 
-                                    Spacer(modifier = Modifier.width(12.dp))
+                                        Spacer(modifier = Modifier.width(8.dp))
 
-                                    Column(modifier = Modifier.weight(1f)) {
                                         Text(
-                                            text = track.title,
+                                            text = "${index + 1}",
                                             style = MaterialTheme.typography.bodyMedium,
-                                            fontWeight = if (isCurrentTrack) FontWeight.Bold else FontWeight.Medium,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis,
                                             color = if (isCurrentTrack)
                                                 MaterialTheme.colorScheme.primary
                                             else
-                                                MaterialTheme.colorScheme.onSurface
-                                        )
-
-                                        Text(
-                                            text = track.artist,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = if (isCurrentTrack)
-                                                MaterialTheme.colorScheme.onPrimaryContainer
-                                            else
                                                 MaterialTheme.colorScheme.onSurfaceVariant,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
+                                            modifier = Modifier.width(32.dp)
                                         )
-                                    }
 
-                                    if (isCurrentTrack) {
-                                        Icon(
-                                            Icons.Filled.PlayArrow,
-                                            "Now playing",
-                                            tint = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.size(24.dp)
+                                        AsyncImage(
+                                            model = track.albumArtUri,
+                                            contentDescription = track.title,
+                                            modifier = Modifier
+                                                .size(48.dp)
+                                                .clip(RoundedCornerShape(4.dp)),
+                                            contentScale = ContentScale.Crop
                                         )
-                                    }
 
-                                    IconButton(
-                                        onClick = { onRemoveTrack(track) }
-                                    ) {
-                                        Icon(
-                                            Icons.Filled.Close,
-                                            "Remove from queue",
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
+                                        Spacer(modifier = Modifier.width(12.dp))
+
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                text = track.title,
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                fontWeight = if (isCurrentTrack) FontWeight.Bold else FontWeight.Medium,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis,
+                                                color = if (isCurrentTrack)
+                                                    MaterialTheme.colorScheme.primary
+                                                else
+                                                    MaterialTheme.colorScheme.onSurface
+                                            )
+
+                                            Text(
+                                                text = track.artist,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = if (isCurrentTrack)
+                                                    MaterialTheme.colorScheme.onPrimaryContainer
+                                                else
+                                                    MaterialTheme.colorScheme.onSurfaceVariant,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                        }
+
+                                        if (isCurrentTrack) {
+                                            Icon(
+                                                Icons.Filled.PlayArrow,
+                                                "Now playing",
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(24.dp)
+                                            )
+                                        }
+
+                                        IconButton(
+                                            onClick = { onRemoveTrack(track) }
+                                        ) {
+                                            Icon(
+                                                Icons.Filled.Close,
+                                                "Remove from queue",
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
                                     }
                                 }
                             }
