@@ -2,6 +2,8 @@ package com.kiryusha.media.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.kiryusha.media.api.lyrics.LyricsRepository
+import com.kiryusha.media.api.lyrics.LyricsResult
 import com.kiryusha.media.database.entities.Track
 import com.kiryusha.media.repository.MusicRepository
 import com.kiryusha.media.utils.MusicPlayerController
@@ -15,7 +17,8 @@ import kotlinx.coroutines.launch
 
 class PlayerViewModel(
     private val musicRepository: MusicRepository,
-    private val playerController: MusicPlayerController
+    private val playerController: MusicPlayerController,
+    private val lyricsRepository: LyricsRepository
 ) : ViewModel() {
 
     private val _currentTrack = MutableStateFlow<Track?>(null)
@@ -47,6 +50,9 @@ class PlayerViewModel(
 
     private val _playerState = MutableStateFlow<PlayerState>(PlayerState.Idle)
     val playerState: StateFlow<PlayerState> = _playerState.asStateFlow()
+
+    private val _lyricsState = MutableStateFlow<LyricsResult>(LyricsResult.Loading)
+    val lyricsState: StateFlow<LyricsResult> = _lyricsState.asStateFlow()
 
     private var userId: Int = -1
     private var progressUpdateJob: Job? = null
@@ -403,6 +409,30 @@ class PlayerViewModel(
 
     private fun stopProgressUpdate() {
         progressUpdateJob?.cancel()
+    }
+
+    /**
+     * Fetches lyrics for the current track
+     */
+    fun fetchLyrics() {
+        val track = _currentTrack.value ?: return
+
+        viewModelScope.launch {
+            _lyricsState.value = LyricsResult.Loading
+            val result = lyricsRepository.getLyrics(
+                trackId = track.trackId,
+                artist = track.artist,
+                title = track.title
+            )
+            _lyricsState.value = result
+        }
+    }
+
+    /**
+     * Clears the current lyrics state
+     */
+    fun clearLyricsState() {
+        _lyricsState.value = LyricsResult.Loading
     }
 
     override fun onCleared() {

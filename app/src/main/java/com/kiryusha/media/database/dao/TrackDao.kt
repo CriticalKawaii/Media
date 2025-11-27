@@ -41,6 +41,9 @@ interface TrackDao {
     @Query("UPDATE tracks SET play_count = play_count + 1 WHERE trackId = :trackId")
     suspend fun incrementPlayCount(trackId: Long)
 
+    @Query("UPDATE tracks SET lyrics = :lyrics WHERE trackId = :trackId")
+    suspend fun updateLyrics(trackId: Long, lyrics: String?)
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertTrack(track: Track): Long
 

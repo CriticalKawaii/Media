@@ -69,10 +69,11 @@ class MainActivity : ComponentActivity() {
         )
         val playlistRepository = PlaylistRepository(database.playlistDao())
         val userRepository = UserRepository(database.userDao())
+        val lyricsRepository = com.kiryusha.media.api.lyrics.LyricsRepository(database.trackDao())
         val mediaScanner = MediaScanner(this)
 
         libraryViewModel = LibraryViewModel(musicRepository, mediaScanner)
-        playerViewModel = PlayerViewModel(musicRepository, musicPlayerController)
+        playerViewModel = PlayerViewModel(musicRepository, musicPlayerController, lyricsRepository)
         playlistViewModel = PlaylistViewModel(playlistRepository, musicRepository)
         profileViewModel = ProfileViewModel(userRepository, musicRepository, playlistRepository)
         settingsViewModel = SettingsViewModel(appPreferences)
