@@ -243,6 +243,64 @@ class MusicPlayerController(private val context: Context) {
         return exoPlayer?.mediaItemCount ?: 0
     }
 
+    fun setShuffleMode(enabled: Boolean) {
+        exoPlayer?.shuffleModeEnabled = enabled
+    }
+
+    fun setRepeatMode(mode: Int) {
+        exoPlayer?.repeatMode = mode
+    }
+
+    fun addTrackNext(track: Track) {
+        exoPlayer?.let { player ->
+            try {
+                val mediaItem = MediaItem.Builder()
+                    .setUri(track.filePath.toUri())
+                    .setMediaId(track.trackId.toString())
+                    .setMediaMetadata(
+                        androidx.media3.common.MediaMetadata.Builder()
+                            .setTitle(track.title)
+                            .setArtist(track.artist)
+                            .setArtworkUri(track.albumArtUri?.toUri())
+                            .build()
+                    )
+                    .build()
+
+                // Add after current item (current index + 1)
+                val nextPosition = player.currentMediaItemIndex + 1
+                player.addMediaItem(nextPosition, mediaItem)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun addTracksNext(tracks: List<Track>) {
+        exoPlayer?.let { player ->
+            try {
+                val mediaItems = tracks.map { track ->
+                    MediaItem.Builder()
+                        .setUri(track.filePath.toUri())
+                        .setMediaId(track.trackId.toString())
+                        .setMediaMetadata(
+                            androidx.media3.common.MediaMetadata.Builder()
+                                .setTitle(track.title)
+                                .setArtist(track.artist)
+                                .setArtworkUri(track.albumArtUri?.toUri())
+                                .build()
+                        )
+                        .build()
+                }
+
+                // Add after current item (current index + 1)
+                val nextPosition = player.currentMediaItemIndex + 1
+                player.addMediaItems(nextPosition, mediaItems)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
     fun release() {
         // Stop playback and clear the playlist
         exoPlayer?.stop()

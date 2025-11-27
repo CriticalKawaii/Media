@@ -156,6 +156,15 @@ class PlayerViewModel(
         // Set playlist in player controller
         playerController.setPlaylist(tracks, startIndex)
 
+        // Apply current shuffle and repeat modes to the player
+        playerController.setShuffleMode(_shuffleEnabled.value)
+        val exoPlayerRepeatMode = when (_repeatMode.value) {
+            RepeatMode.OFF -> androidx.media3.common.Player.REPEAT_MODE_OFF
+            RepeatMode.ALL -> androidx.media3.common.Player.REPEAT_MODE_ALL
+            RepeatMode.ONE -> androidx.media3.common.Player.REPEAT_MODE_ONE
+        }
+        playerController.setRepeatMode(exoPlayerRepeatMode)
+
         if (tracks.isNotEmpty() && startIndex < tracks.size) {
             _currentTrack.value = tracks[startIndex]
             // Check favorite status for initial track
@@ -208,6 +217,7 @@ class PlayerViewModel(
 
     fun toggleShuffle() {
         _shuffleEnabled.value = !_shuffleEnabled.value
+        playerController.setShuffleMode(_shuffleEnabled.value)
     }
 
     fun cycleRepeatMode() {
@@ -216,6 +226,14 @@ class PlayerViewModel(
             RepeatMode.ALL -> RepeatMode.ONE
             RepeatMode.ONE -> RepeatMode.OFF
         }
+
+        // Apply repeat mode to ExoPlayer
+        val exoPlayerRepeatMode = when (_repeatMode.value) {
+            RepeatMode.OFF -> androidx.media3.common.Player.REPEAT_MODE_OFF
+            RepeatMode.ALL -> androidx.media3.common.Player.REPEAT_MODE_ALL
+            RepeatMode.ONE -> androidx.media3.common.Player.REPEAT_MODE_ONE
+        }
+        playerController.setRepeatMode(exoPlayerRepeatMode)
     }
 
     fun removeTrackFromQueue(track: Track) {
@@ -272,6 +290,26 @@ class PlayerViewModel(
         playerController.addTracksToQueue(tracks)
     }
 
+    fun addTrackNext(track: Track) {
+        val currentPlaylist = _playlist.value.toMutableList()
+        val insertPosition = _currentIndex.value + 1
+        currentPlaylist.add(insertPosition, track)
+        _playlist.value = currentPlaylist
+
+        // Add to player controller
+        playerController.addTrackNext(track)
+    }
+
+    fun addTracksNext(tracks: List<Track>) {
+        val currentPlaylist = _playlist.value.toMutableList()
+        val insertPosition = _currentIndex.value + 1
+        currentPlaylist.addAll(insertPosition, tracks)
+        _playlist.value = currentPlaylist
+
+        // Add to player controller
+        playerController.addTracksNext(tracks)
+    }
+
     fun toggleFavorite(trackId: Long, isFavorite: Boolean) {
         if (userId == -1) return
         viewModelScope.launch {
@@ -314,13 +352,6 @@ class PlayerViewModel(
                         position.toFloat() / track.durationMs.toFloat()
                     } else {
                         0f
-                    }
-
-                    if (position >= track.durationMs - 500 && track.durationMs > 0) {
-                        when (_repeatMode.value) {
-                            RepeatMode.ONE -> seekTo(0L)
-                            else -> skipNext()
-                        }
                     }
                 }
 

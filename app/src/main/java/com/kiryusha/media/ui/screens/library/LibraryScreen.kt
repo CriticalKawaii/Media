@@ -537,6 +537,16 @@ fun SwipeableTrackItem(
                 onDismissRequest = { showMenu = false }
             ) {
                 DropdownMenuItem(
+                    text = { Text("Play next") },
+                    onClick = {
+                        playerViewModel.addTrackNext(track)
+                        showMenu = false
+                    },
+                    leadingIcon = {
+                        Icon(Icons.Filled.PlaylistPlay, contentDescription = null)
+                    }
+                )
+                DropdownMenuItem(
                     text = { Text("Add to queue") },
                     onClick = {
                         playerViewModel.addTrackToQueue(track)
