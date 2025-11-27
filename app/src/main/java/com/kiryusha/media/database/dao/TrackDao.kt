@@ -14,6 +14,9 @@ interface TrackDao {
     @Query("SELECT * FROM tracks WHERE trackId = :trackId")
     suspend fun getTrackById(trackId: Long): Track?
 
+    @Query("SELECT * FROM tracks WHERE file_path = :filePath")
+    suspend fun getTrackByFilePath(filePath: String): Track?
+
     @Query("SELECT * FROM tracks WHERE album = :albumName ORDER BY title")
     fun getTracksByAlbum(albumName: String): Flow<List<Track>>
 
