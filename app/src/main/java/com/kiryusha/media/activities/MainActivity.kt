@@ -1,6 +1,7 @@
 package com.kiryusha.media.activities
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
@@ -80,6 +81,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             var currentUserId by remember { mutableStateOf(-1) }
+            val darkTheme by settingsViewModel.darkTheme.collectAsState()
 
             LaunchedEffect(Unit) {
                 appPreferences.getUserId().collect { userId ->
@@ -96,7 +98,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            MediaTheme {
+            MediaTheme(darkTheme = darkTheme, dynamicColor = false) {
                 val permissionState = rememberMultiplePermissionsState(
                     permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                         listOf(Manifest.permission.READ_MEDIA_AUDIO)
@@ -139,6 +141,22 @@ class MainActivity : ComponentActivity() {
             startActivity(Intent(this@MainActivity, LoginActivity::class.java))
             finish()
         }
+    }
+
+    override fun attachBaseContext(newBase: Context) {
+        val prefs = AppPreferences(newBase)
+        var languageCode = "en"
+
+        try {
+            kotlinx.coroutines.runBlocking {
+                languageCode = prefs.getLanguage().first()
+            }
+        } catch (e: Exception) {
+            // Use default language if error
+        }
+
+        val context = com.kiryusha.media.utils.LocaleManager.setLocale(newBase, languageCode)
+        super.attachBaseContext(context)
     }
 
     override fun onDestroy() {

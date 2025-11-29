@@ -1,0 +1,54 @@
+<resources>
+    <string name="app_name">Media</string>
+    <string name="media_player">媒体播放器</string>
+
+    <!-- Navigation -->
+    <string name="nav_library">音乐库</string>
+    <string name="nav_playlists">播放列表</string>
+    <string name="nav_player">播放器</string>
+    <string name="nav_profile">个人资料</string>
+
+    <!-- Library -->
+    <string name="library_empty_title">未找到音乐</string>
+    <string name="library_empty_message">扫描您的设备以查找音乐文件</string>
+    <string name="library_scan">扫描设备</string>
+
+    <!-- Player -->
+    <string name="player_play">播放</string>
+    <string name="player_pause">暂停</string>
+    <string name="player_next">下一首</string>
+    <string name="player_previous">上一首</string>
+    <string name="player_shuffle">随机播放</string>
+    <string name="player_repeat">循环播放</string>
+
+    <!-- Playlists -->
+    <string name="playlists_empty_title">还没有播放列表</string>
+    <string name="playlists_empty_message">创建您的第一个播放列表来整理音乐</string>
+    <string name="playlists_create">创建播放列表</string>
+    <string name="playlist_name">播放列表名称</string>
+    <string name="playlist_description">描述（可选）</string>
+
+    <!-- Profile -->
+    <string name="profile_logout">退出登录</string>
+    <string name="profile_logout_confirm">您确定要退出登录吗？</string>
+    <string name="profile_stats">您的统计</string>
+    <string name="profile_tracks">歌曲</string>
+    <string name="profile_playlists">播放列表</string>
+    <string name="profile_playtime">播放时长</string>
+
+    <!-- Permissions -->
+    <string name="permission_required">需要权限</string>
+    <string name="permission_audio_message">此应用需要访问您的媒体文件才能播放音乐。</string>
+    <string name="permission_grant">授予权限</string>
+
+    <!-- Common -->
+    <string name="ok">确定</string>
+    <string name="cancel">取消</string>
+    <string name="delete">删除</string>
+    <string name="edit">编辑</string>
+    <string name="save">保存</string>
+    <string name="search">搜索</string>
+    <string name="loading">加载中...</string>
+    <string name="error">错误</string>
+    <string name="retry">重试</string>
+</resources>
