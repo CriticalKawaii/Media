@@ -12,29 +12,33 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80,
+    primary = AppleMusicRed,
+    secondary = AppleMusicPink,
+    tertiary = AppleMusicLightPink,
     background = Dark,
     surface = DarkSurface,
-    onPrimary = Dark,
-    onSecondary = Dark,
-    onTertiary = Dark,
+    surfaceVariant = DarkCard,
+    onPrimary = LightText,
+    onSecondary = LightText,
+    onTertiary = LightText,
     onBackground = LightText,
-    onSurface = LightText
+    onSurface = LightText,
+    error = AppleMusicRed
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40,
+    primary = AppleMusicRed,
+    secondary = AppleMusicPink,
+    tertiary = AppleMusicLightPink,
     background = Light,
     surface = LightSurface,
-    onPrimary = Light,
-    onSecondary = Light,
-    onTertiary = Light,
+    surfaceVariant = LightCard,
+    onPrimary = LightText,
+    onSecondary = LightText,
+    onTertiary = LightText,
     onBackground = DarkText,
-    onSurface = DarkText
+    onSurface = DarkText,
+    error = AppleMusicRed
 )
 
 @Composable
@@ -56,7 +60,7 @@ fun MediaTheme(
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = colorScheme.primary.toArgb()
+            window.statusBarColor = colorScheme.background.toArgb()
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
         }
     }

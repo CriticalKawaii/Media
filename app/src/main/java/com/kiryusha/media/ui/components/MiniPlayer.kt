@@ -39,16 +39,19 @@ fun MiniPlayer(
         Surface(
             modifier = modifier
                 .fillMaxWidth()
-                .height(64.dp)
+                .height(72.dp)
                 .clickable(onClick = onNavigateToPlayer),
             color = MaterialTheme.colorScheme.surfaceVariant,
-            tonalElevation = 3.dp
+            tonalElevation = 0.dp,
+            shadowElevation = 8.dp
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
-                // Progress indicator
+                // Progress indicator - thinner Apple Music style
                 LinearProgressIndicator(
                     progress = { progress },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(2.dp),
                     color = MaterialTheme.colorScheme.primary,
                     trackColor = MaterialTheme.colorScheme.surfaceVariant,
                 )
@@ -56,16 +59,16 @@ fun MiniPlayer(
                 Row(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Album art
+                    // Album art - slightly larger and more rounded
                     AsyncImage(
                         model = track.albumArtUri,
                         contentDescription = "Album art",
                         modifier = Modifier
                             .size(48.dp)
-                            .clip(RoundedCornerShape(4.dp)),
+                            .clip(RoundedCornerShape(6.dp)),
                         contentScale = ContentScale.Crop
                     )
 
@@ -78,6 +81,7 @@ fun MiniPlayer(
                         Text(
                             text = track.title,
                             style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -92,25 +96,15 @@ fun MiniPlayer(
 
                     Spacer(modifier = Modifier.width(8.dp))
 
-                    // Skip previous button
-                    IconButton(
-                        onClick = { playerViewModel.skipPrevious() }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.SkipPrevious,
-                            contentDescription = "Skip previous",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-
-                    // Play/Pause button
+                    // Play/Pause button - more prominent
                     IconButton(
                         onClick = { playerViewModel.togglePlayPause() }
                     ) {
                         Icon(
                             imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                             contentDescription = if (isPlaying) "Pause" else "Play",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(28.dp)
                         )
                     }
 
@@ -121,7 +115,8 @@ fun MiniPlayer(
                         Icon(
                             imageVector = Icons.Default.SkipNext,
                             contentDescription = "Skip next",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(24.dp)
                         )
                     }
                 }
