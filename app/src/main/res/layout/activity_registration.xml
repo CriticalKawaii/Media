@@ -65,7 +65,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:hint="Логин"
-                    app:startIconDrawable="@android:drawable/ic_menu_sort_by_size">
+                    app:startIconDrawable="@android:drawable/ic_dialog_email">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/et_login"
@@ -84,7 +84,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
                     android:hint="Username"
-                    app:startIconDrawable="@android:drawable/ic_menu_my_calendar">
+                    app:startIconDrawable="@android:drawable/ic_menu_edit">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/et_username"
