@@ -23,7 +23,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
@@ -422,8 +421,8 @@ fun TrackListView(
 ) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(1),
-        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         items(tracks) { track ->
             SwipeableTrackItem(
@@ -494,8 +493,8 @@ fun SwipeableTrackItem(
                 model = track.albumArtUri,
                 contentDescription = track.title,
                 modifier = Modifier
-                    .size(52.dp)
-                    .clip(RoundedCornerShape(6.dp)),
+                    .size(56.dp)
+                    .clip(RoundedCornerShape(8.dp)),
                 contentScale = ContentScale.Crop
             )
 
@@ -504,13 +503,11 @@ fun SwipeableTrackItem(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = track.title,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Medium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-
-                Spacer(modifier = Modifier.height(2.dp))
 
                 Text(
                     text = "${track.artist} • ${track.album}",
@@ -524,8 +521,7 @@ fun SwipeableTrackItem(
             Text(
                 text = track.getDurationFormatted(),
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(end = 4.dp)
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             if (!selectionMode) {
@@ -707,9 +703,9 @@ fun AlbumGridView(
 ) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
-        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp)
+        contentPadding = PaddingValues(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         items(albums) { album ->
             AlbumItem(
@@ -725,44 +721,46 @@ fun AlbumItem(
     album: Album,
     onClick: () -> Unit
 ) {
-    Column(
+    Card(
+        onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .aspectRatio(1f),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        // Album art
-        AsyncImage(
-            model = album.coverUri,
-            contentDescription = album.name,
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(1f)
-                .clip(RoundedCornerShape(8.dp)),
-            contentScale = ContentScale.Crop
-        )
+        Column {
+            AsyncImage(
+                model = album.coverUri,
+                contentDescription = album.name,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)),
+                contentScale = ContentScale.Crop
+            )
 
-        Spacer(modifier = Modifier.height(8.dp))
+            Column(
+                modifier = Modifier.padding(12.dp)
+            ) {
+                Text(
+                    text = album.name,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
 
-        // Album name
-        Text(
-            text = album.name,
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.SemiBold,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            lineHeight = 18.sp
-        )
+                Spacer(modifier = Modifier.height(4.dp))
 
-        Spacer(modifier = Modifier.height(2.dp))
-
-        // Artist name
-        Text(
-            text = album.artist,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
+                Text(
+                    text = album.artist,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
     }
 }
 
@@ -955,9 +953,9 @@ fun ArtistsView(
 
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
-        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp)
+        contentPadding = PaddingValues(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         items(artistsWithCounts) { artist ->
             ArtistItem(
@@ -979,48 +977,49 @@ fun ArtistItem(
     artistInfo: ArtistInfo,
     onClick: () -> Unit
 ) {
-    Column(
+    Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .aspectRatio(1f)
+            .clickable(onClick = onClick),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        // Artist image (circular)
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(1f),
-            contentAlignment = Alignment.Center
-        ) {
-            AsyncImage(
-                model = artistInfo.albumArtUri,
-                contentDescription = artistInfo.name,
+        Column {
+            Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .clip(RoundedCornerShape(8.dp)),
-                contentScale = ContentScale.Crop
-            )
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .clip(RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                AsyncImage(
+                    model = artistInfo.albumArtUri,
+                    contentDescription = artistInfo.name,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            }
+
+            Column(
+                modifier = Modifier.padding(12.dp)
+            ) {
+                Text(
+                    text = artistInfo.name,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Text(
+                    text = "${artistInfo.trackCount} ${if (artistInfo.trackCount == 1) "track" else "tracks"}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Artist name
-        Text(
-            text = artistInfo.name,
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.SemiBold,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            lineHeight = 18.sp
-        )
-
-        Spacer(modifier = Modifier.height(2.dp))
-
-        // Track count
-        Text(
-            text = "${artistInfo.trackCount} ${if (artistInfo.trackCount == 1) "track" else "tracks"}",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
     }
 }
 

@@ -315,7 +315,7 @@ fun SwipeableAlbumArt(
     onClick: () -> Unit
 ) {
     val scale by animateFloatAsState(
-        targetValue = if (isPlaying) 1f else 0.98f,
+        targetValue = if (isPlaying) 1f else 0.95f,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
             stiffness = Spring.StiffnessLow
@@ -339,7 +339,7 @@ fun SwipeableAlbumArt(
                     translationX = offsetX * 0.5f
                     rotationY = offsetX * 0.05f
                 }
-                .clip(RoundedCornerShape(12.dp))
+                .clip(RoundedCornerShape(16.dp))
                 .clickable(onClick = onClick),
             contentScale = ContentScale.Crop
         )
@@ -476,98 +476,76 @@ fun PlaybackControls(
     onToggleShuffle: () -> Unit,
     onToggleRepeat: () -> Unit
 ) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        // Main controls
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Previous
-            IconButton(
-                onClick = onSkipPrevious,
-                modifier = Modifier.size(56.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.SkipPrevious,
-                    contentDescription = "Previous",
-                    modifier = Modifier.size(40.dp)
-                )
-            }
-
-            // Play/Pause - Larger Apple Music style button
-            FloatingActionButton(
-                onClick = onPlayPause,
-                modifier = Modifier.size(72.dp),
-                containerColor = MaterialTheme.colorScheme.primary,
-                elevation = FloatingActionButtonDefaults.elevation(
-                    defaultElevation = 0.dp,
-                    pressedElevation = 2.dp
-                )
-            ) {
-                Icon(
-                    imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                    contentDescription = if (isPlaying) "Pause" else "Play",
-                    modifier = Modifier.size(36.dp)
-                )
-            }
-
-            // Next
-            IconButton(
-                onClick = onSkipNext,
-                modifier = Modifier.size(56.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.SkipNext,
-                    contentDescription = "Next",
-                    modifier = Modifier.size(40.dp)
-                )
-            }
+        // Shuffle
+        IconButton(onClick = onToggleShuffle) {
+            Icon(
+                imageVector = Icons.Filled.Shuffle,
+                contentDescription = "Shuffle",
+                tint = if (shuffleEnabled) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                }
+            )
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Secondary controls (shuffle and repeat)
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
+        // Previous
+        IconButton(
+            onClick = onSkipPrevious,
+            modifier = Modifier.size(48.dp)
         ) {
-            // Shuffle
-            IconButton(onClick = onToggleShuffle) {
-                Icon(
-                    imageVector = Icons.Filled.Shuffle,
-                    contentDescription = "Shuffle",
-                    tint = if (shuffleEnabled) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    },
-                    modifier = Modifier.size(24.dp)
-                )
-            }
+            Icon(
+                imageVector = Icons.Filled.SkipPrevious,
+                contentDescription = "Previous",
+                modifier = Modifier.size(36.dp)
+            )
+        }
 
-            Spacer(modifier = Modifier.weight(1f))
+        // Play/Pause
+        FloatingActionButton(
+            onClick = onPlayPause,
+            modifier = Modifier.size(64.dp),
+            containerColor = MaterialTheme.colorScheme.primary
+        ) {
+            Icon(
+                imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                contentDescription = if (isPlaying) "Pause" else "Play",
+                modifier = Modifier.size(32.dp)
+            )
+        }
 
-            // Repeat
-            IconButton(onClick = onToggleRepeat) {
-                Icon(
-                    imageVector = when (repeatMode) {
-                        RepeatMode.OFF -> Icons.Filled.Repeat
-                        RepeatMode.ALL -> Icons.Filled.Repeat
-                        RepeatMode.ONE -> Icons.Filled.RepeatOne
-                    },
-                    contentDescription = "Repeat",
-                    tint = if (repeatMode != RepeatMode.OFF) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    },
-                    modifier = Modifier.size(24.dp)
-                )
-            }
+        // Next
+        IconButton(
+            onClick = onSkipNext,
+            modifier = Modifier.size(48.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Filled.SkipNext,
+                contentDescription = "Next",
+                modifier = Modifier.size(36.dp)
+            )
+        }
+
+        // Repeat
+        IconButton(onClick = onToggleRepeat) {
+            Icon(
+                imageVector = when (repeatMode) {
+                    RepeatMode.OFF -> Icons.Filled.Repeat
+                    RepeatMode.ALL -> Icons.Filled.Repeat
+                    RepeatMode.ONE -> Icons.Filled.RepeatOne
+                },
+                contentDescription = "Repeat",
+                tint = if (repeatMode != RepeatMode.OFF) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                }
+            )
         }
     }
 }

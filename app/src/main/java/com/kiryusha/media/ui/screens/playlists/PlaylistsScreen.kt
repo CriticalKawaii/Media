@@ -99,9 +99,9 @@ fun PlaylistList(
 ) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
-        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp)
+        contentPadding = PaddingValues(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         items(playlists) { playlistWithTracks ->
             PlaylistItem(
@@ -117,42 +117,44 @@ fun PlaylistItem(
     playlistWithTracks: PlaylistWithTracks,
     onClick: () -> Unit
 ) {
-    Column(
+    Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .clickable(onClick = onClick),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        val coverUri = playlistWithTracks.tracks.firstOrNull()?.albumArtUri
+        Column(
+            modifier = Modifier.padding(12.dp)
+        ) {
+            val coverUri = playlistWithTracks.tracks.firstOrNull()?.albumArtUri
 
-        // Playlist cover art
-        AsyncImage(
-            model = coverUri,
-            contentDescription = playlistWithTracks.playlist.name,
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(1f)
-                .clip(RoundedCornerShape(8.dp)),
-            contentScale = ContentScale.Crop
-        )
+            AsyncImage(
+                model = coverUri,
+                contentDescription = playlistWithTracks.playlist.name,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1f)
+                    .clip(RoundedCornerShape(8.dp)),
+                contentScale = ContentScale.Crop
+            )
 
-        Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-        // Playlist name
-        Text(
-            text = playlistWithTracks.playlist.name,
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.SemiBold,
-            maxLines = 2
-        )
+            Text(
+                text = playlistWithTracks.playlist.name,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                maxLines = 2
+            )
 
-        Spacer(modifier = Modifier.height(2.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
-        // Track count
-        Text(
-            text = "${playlistWithTracks.tracks.size} tracks",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+            Text(
+                text = "${playlistWithTracks.tracks.size} tracks",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
     }
 }
 

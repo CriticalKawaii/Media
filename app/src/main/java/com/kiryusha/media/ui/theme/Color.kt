@@ -2,20 +2,17 @@ package com.kiryusha.media.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Apple Music inspired colors
-val AppleMusicRed = Color(0xFFFA2D48)
-val AppleMusicPink = Color(0xFFFB5C74)
-val AppleMusicLightPink = Color(0xFFFF6B7F)
+val Purple80 = Color(0xFFD0BCFF)
+val PurpleGrey80 = Color(0xFFCCC2DC)
+val Pink80 = Color(0xFFEFB8C8)
 
-val AppleMusicDarkRed = Color(0xFFE8233E)
-val AppleMusicDarkPink = Color(0xFFFF4D68)
+val Purple40 = Color(0xFF6650a4)
+val PurpleGrey40 = Color(0xFF625b71)
+val Pink40 = Color(0xFF7D5260)
 
-// Background colors
-val Dark = Color(0xFF0A0A0A)
-val DarkSurface = Color(0xFF1C1C1E)
-val DarkCard = Color(0xFF2C2C2E)
-val Light = Color(0xFFF9F9F9)
-val LightSurface = Color(0xFFFFFFFF)
-val LightCard = Color(0xFFFFFFFF)
+val Dark = Color(0xFF121212)
+val DarkSurface = Color(0xFF1E1E1E)
+val Light = Color(0xFFFFFFFF)
+val LightSurface = Color(0xFFF2F2F2)
 val LightText = Color(0xFFFFFFFF)
 val DarkText = Color(0xFF000000)
