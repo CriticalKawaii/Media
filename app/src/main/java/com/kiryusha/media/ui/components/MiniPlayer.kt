@@ -96,6 +96,18 @@ fun MiniPlayer(
 
                     Spacer(modifier = Modifier.width(8.dp))
 
+                    // Skip previous button
+                    IconButton(
+                        onClick = { playerViewModel.skipPrevious() }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.SkipPrevious,
+                            contentDescription = "Skip previous",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+
                     // Play/Pause button - more prominent
                     IconButton(
                         onClick = { playerViewModel.togglePlayPause() }
