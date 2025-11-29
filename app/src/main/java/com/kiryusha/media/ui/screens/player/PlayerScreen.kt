@@ -13,8 +13,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items as lazyItems
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -71,7 +69,6 @@ fun PlayerScreen(
     var showLyricsDialog by remember { mutableStateOf(false) }
     val lyricsState by viewModel.lyricsState.collectAsState()
     val context = LocalContext.current
-    val scrollState = rememberScrollState()
 
     Scaffold(
         topBar = {
@@ -139,8 +136,7 @@ fun PlayerScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .verticalScroll(scrollState)
-                        .padding(24.dp)
+                        .padding(horizontal = 20.dp, vertical = 16.dp)
                         .pointerInput(Unit) {
                             detectHorizontalDragGestures(
                                 onDragEnd = {
@@ -159,77 +155,86 @@ fun PlayerScreen(
                                 }
                             )
                         },
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.SpaceBetween
                 ) {
-                    SwipeableAlbumArt(
-                        albumArtUri = track.albumArtUri,
-                        isPlaying = isPlaying,
-                        offsetX = offsetX,
-                        onClick = { showExpandedArt = true }
-                    )
-
-                    Spacer(modifier = Modifier.height(32.dp))
-
-                    TrackInfo(
-                        title = track.title,
-                        artist = track.artist
-                    )
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    ProgressBar(
-                        progress = progress,
-                        currentPosition = currentPosition,
-                        duration = track.durationMs,
-                        onSeek = { newPosition ->
-                            viewModel.seekTo(newPosition)
-                        }
-                    )
-
-                    Spacer(modifier = Modifier.height(32.dp))
-
-                    PlaybackControls(
-                        isPlaying = isPlaying,
-                        shuffleEnabled = shuffleEnabled,
-                        repeatMode = repeatMode,
-                        onPlayPause = { viewModel.togglePlayPause() },
-                        onSkipNext = { viewModel.skipNext() },
-                        onSkipPrevious = { viewModel.skipPrevious() },
-                        onToggleShuffle = { viewModel.toggleShuffle() },
-                        onToggleRepeat = { viewModel.cycleRepeatMode() }
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Additional Controls
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.weight(1f, fill = false)
                     ) {
-                        IconButton(onClick = {
-                            currentTrack?.let { showAddToPlaylistDialog = true }
-                        }) {
-                            Icon(Icons.Filled.Add, "Add to playlist")
-                        }
-                        IconButton(onClick = {
-                            viewModel.toggleFavorite(track.trackId, isCurrentTrackFavorite)
-                        }) {
-                            Icon(
-                                if (isCurrentTrackFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                                "Favorite",
-                                tint = if (isCurrentTrackFavorite) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-                        IconButton(onClick = {
-                            viewModel.fetchLyrics()
-                            showLyricsDialog = true
-                        }) {
-                            Icon(Icons.Filled.Lyrics, "Lyrics")
-                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        SwipeableAlbumArt(
+                            albumArtUri = track.albumArtUri,
+                            isPlaying = isPlaying,
+                            offsetX = offsetX,
+                            onClick = { showExpandedArt = true }
+                        )
+
+                        Spacer(modifier = Modifier.height(20.dp))
+
+                        TrackInfo(
+                            title = track.title,
+                            artist = track.artist
+                        )
                     }
 
-                    // Bottom padding for scrolling
-                    Spacer(modifier = Modifier.height(32.dp))
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        ProgressBar(
+                            progress = progress,
+                            currentPosition = currentPosition,
+                            duration = track.durationMs,
+                            onSeek = { newPosition ->
+                                viewModel.seekTo(newPosition)
+                            }
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        PlaybackControls(
+                            isPlaying = isPlaying,
+                            shuffleEnabled = shuffleEnabled,
+                            repeatMode = repeatMode,
+                            onPlayPause = { viewModel.togglePlayPause() },
+                            onSkipNext = { viewModel.skipNext() },
+                            onSkipPrevious = { viewModel.skipPrevious() },
+                            onToggleShuffle = { viewModel.toggleShuffle() },
+                            onToggleRepeat = { viewModel.cycleRepeatMode() }
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        // Additional Controls
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceEvenly
+                        ) {
+                            IconButton(onClick = {
+                                currentTrack?.let { showAddToPlaylistDialog = true }
+                            }) {
+                                Icon(Icons.Filled.Add, "Add to playlist")
+                            }
+                            IconButton(onClick = {
+                                viewModel.toggleFavorite(track.trackId, isCurrentTrackFavorite)
+                            }) {
+                                Icon(
+                                    if (isCurrentTrackFavorite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                                    "Favorite",
+                                    tint = if (isCurrentTrackFavorite) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                            IconButton(onClick = {
+                                viewModel.fetchLyrics()
+                                showLyricsDialog = true
+                            }) {
+                                Icon(Icons.Filled.Lyrics, "Lyrics")
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
                 }
             } ?: run {
                 Column(
@@ -495,19 +500,19 @@ fun PlaybackControls(
             // Previous
             IconButton(
                 onClick = onSkipPrevious,
-                modifier = Modifier.size(56.dp)
+                modifier = Modifier.size(52.dp)
             ) {
                 Icon(
                     imageVector = Icons.Filled.SkipPrevious,
                     contentDescription = "Previous",
-                    modifier = Modifier.size(40.dp)
+                    modifier = Modifier.size(36.dp)
                 )
             }
 
             // Play/Pause - Larger Apple Music style button
             FloatingActionButton(
                 onClick = onPlayPause,
-                modifier = Modifier.size(72.dp),
+                modifier = Modifier.size(68.dp),
                 containerColor = MaterialTheme.colorScheme.primary,
                 elevation = FloatingActionButtonDefaults.elevation(
                     defaultElevation = 0.dp,
@@ -517,24 +522,24 @@ fun PlaybackControls(
                 Icon(
                     imageVector = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
                     contentDescription = if (isPlaying) "Pause" else "Play",
-                    modifier = Modifier.size(36.dp)
+                    modifier = Modifier.size(34.dp)
                 )
             }
 
             // Next
             IconButton(
                 onClick = onSkipNext,
-                modifier = Modifier.size(56.dp)
+                modifier = Modifier.size(52.dp)
             ) {
                 Icon(
                     imageVector = Icons.Filled.SkipNext,
                     contentDescription = "Next",
-                    modifier = Modifier.size(40.dp)
+                    modifier = Modifier.size(36.dp)
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         // Secondary controls (shuffle and repeat)
         Row(
@@ -552,7 +557,7 @@ fun PlaybackControls(
                     } else {
                         MaterialTheme.colorScheme.onSurfaceVariant
                     },
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(22.dp)
                 )
             }
 
@@ -572,7 +577,7 @@ fun PlaybackControls(
                     } else {
                         MaterialTheme.colorScheme.onSurfaceVariant
                     },
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(22.dp)
                 )
             }
         }
