@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items as lazyItems
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -69,6 +71,7 @@ fun PlayerScreen(
     var showLyricsDialog by remember { mutableStateOf(false) }
     val lyricsState by viewModel.lyricsState.collectAsState()
     val context = LocalContext.current
+    val scrollState = rememberScrollState()
 
     Scaffold(
         topBar = {
@@ -136,6 +139,7 @@ fun PlayerScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
+                        .verticalScroll(scrollState)
                         .padding(24.dp)
                         .pointerInput(Unit) {
                             detectHorizontalDragGestures(
@@ -195,7 +199,7 @@ fun PlayerScreen(
                         onToggleRepeat = { viewModel.cycleRepeatMode() }
                     )
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
 
                     // Additional Controls
                     Row(
@@ -223,6 +227,9 @@ fun PlayerScreen(
                             Icon(Icons.Filled.Lyrics, "Lyrics")
                         }
                     }
+
+                    // Bottom padding for scrolling
+                    Spacer(modifier = Modifier.height(32.dp))
                 }
             } ?: run {
                 Column(
