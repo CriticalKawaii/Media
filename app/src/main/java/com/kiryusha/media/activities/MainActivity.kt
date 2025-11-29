@@ -179,8 +179,8 @@ fun MainScreen(
                     // Bottom Navigation Bar (without Player tab)
                     NavigationBar {
                         val items = listOf(
-                            BottomNavItem("Library", Screen.Library.route, Icons.Filled.Home),
-                            BottomNavItem("Playlists", Screen.Playlists.route, Icons.Filled.List),
+                            BottomNavItem("Library", Screen.Library.route, Icons.Filled.LibraryMusic),
+                            BottomNavItem("Playlists", Screen.Playlists.route, Icons.Filled.QueueMusic),
                             BottomNavItem("Profile", Screen.Profile.route, Icons.Filled.Person)
                         )
 
