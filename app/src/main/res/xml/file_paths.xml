@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- External storage root -->
+    <external-path name="external_files" path="." />
+
+    <!-- Music directory -->
+    <external-path name="music" path="Music/" />
+
+    <!-- Download directory -->
+    <external-path name="downloads" path="Download/" />
+
+    <!-- All external storage (for compatibility) -->
+    <root-path name="root" path="." />
+</paths>

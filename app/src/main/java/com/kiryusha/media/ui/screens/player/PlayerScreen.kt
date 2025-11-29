@@ -1,7 +1,11 @@
 package com.kiryusha.media.ui.screens.player
 
 import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
 import androidx.compose.animation.core.Spring
+import androidx.core.content.FileProvider
+import java.io.File
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -82,12 +86,28 @@ fun PlayerScreen(
                 actions = {
                     IconButton(onClick = {
                         currentTrack?.let { track ->
-                            val shareIntent = Intent().apply {
-                                action = Intent.ACTION_SEND
-                                putExtra(Intent.EXTRA_TEXT, "Now playing: ${track.title} by ${track.artist}")
-                                type = "text/plain"
+                            try {
+                                val file = File(track.filePath)
+                                if (file.exists()) {
+                                    val uri = FileProvider.getUriForFile(
+                                        context,
+                                        "${context.packageName}.fileprovider",
+                                        file
+                                    )
+                                    val shareIntent = Intent().apply {
+                                        action = Intent.ACTION_SEND
+                                        type = "audio/*"
+                                        putExtra(Intent.EXTRA_STREAM, uri)
+                                        putExtra(Intent.EXTRA_TEXT, "${track.title} by ${track.artist}")
+                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                    }
+                                    context.startActivity(Intent.createChooser(shareIntent, "Share music file"))
+                                } else {
+                                    Toast.makeText(context, "File not found", Toast.LENGTH_SHORT).show()
+                                }
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "Error sharing file: ${e.message}", Toast.LENGTH_SHORT).show()
                             }
-                            context.startActivity(Intent.createChooser(shareIntent, "Share via"))
                         }
                     }) {
                         Icon(Icons.Filled.Share, "Share")
