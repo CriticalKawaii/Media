@@ -21,6 +21,12 @@ class SettingsViewModel(
     private val _showPlaybackNotifications = MutableStateFlow(true)
     val showPlaybackNotifications: StateFlow<Boolean> = _showPlaybackNotifications.asStateFlow()
 
+    private val _darkTheme = MutableStateFlow(false)
+    val darkTheme: StateFlow<Boolean> = _darkTheme.asStateFlow()
+
+    private val _language = MutableStateFlow("en")
+    val language: StateFlow<String> = _language.asStateFlow()
+
     init {
         viewModelScope.launch {
             appPreferences.areNotificationsEnabled().collect { enabled ->
@@ -37,6 +43,18 @@ class SettingsViewModel(
         viewModelScope.launch {
             appPreferences.shouldShowPlaybackNotifications().collect { enabled ->
                 _showPlaybackNotifications.value = enabled
+            }
+        }
+
+        viewModelScope.launch {
+            appPreferences.isDarkTheme().collect { enabled ->
+                _darkTheme.value = enabled
+            }
+        }
+
+        viewModelScope.launch {
+            appPreferences.getLanguage().collect { lang ->
+                _language.value = lang
             }
         }
     }
@@ -56,6 +74,18 @@ class SettingsViewModel(
     fun setShowPlaybackNotifications(enabled: Boolean) {
         viewModelScope.launch {
             appPreferences.setShowPlaybackNotifications(enabled)
+        }
+    }
+
+    fun setDarkTheme(enabled: Boolean) {
+        viewModelScope.launch {
+            appPreferences.setDarkTheme(enabled)
+        }
+    }
+
+    fun setLanguage(language: String) {
+        viewModelScope.launch {
+            appPreferences.setLanguage(language)
         }
     }
 }

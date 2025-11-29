@@ -1,7 +1,5 @@
 package com.kiryusha.media.ui.screens.settings
 
-import android.content.Context
-import android.os.Environment
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -14,12 +12,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.kiryusha.media.viewmodels.SettingsViewModel
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -27,19 +22,13 @@ fun SettingsScreen(
     viewModel: SettingsViewModel,
     onBackClick: () -> Unit
 ) {
-    val context = LocalContext.current
-
     val notificationsEnabled by viewModel.notificationsEnabled.collectAsState()
     val notificationSoundEnabled by viewModel.notificationSoundEnabled.collectAsState()
     val showPlaybackNotifications by viewModel.showPlaybackNotifications.collectAsState()
+    val darkTheme by viewModel.darkTheme.collectAsState()
+    val language by viewModel.language.collectAsState()
 
-    var storageInfo by remember { mutableStateOf("Calculating...") }
-
-    LaunchedEffect(Unit) {
-        storageInfo = withContext(Dispatchers.IO) {
-            calculateAudioStorage(context)
-        }
-    }
+    var showLanguageDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -60,6 +49,52 @@ fun SettingsScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
+            // Appearance Section
+            Text(
+                text = "Appearance",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Column(modifier = Modifier.padding(vertical = 8.dp)) {
+                    SettingsItem(
+                        icon = Icons.Filled.DarkMode,
+                        title = "Dark Theme",
+                        subtitle = "Enable dark mode",
+                        trailing = {
+                            Switch(
+                                checked = darkTheme,
+                                onCheckedChange = { viewModel.setDarkTheme(it) }
+                            )
+                        }
+                    )
+
+                    HorizontalDivider()
+
+                    SettingsItem(
+                        icon = Icons.Filled.Language,
+                        title = "Language",
+                        subtitle = when (language) {
+                            "en" -> "English"
+                            "ru" -> "Русский"
+                            "zh" -> "中文"
+                            else -> "English"
+                        },
+                        onClick = { showLanguageDialog = true }
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Notifications Section
             Text(
                 text = "Notifications",
                 style = MaterialTheme.typography.titleMedium,
@@ -120,30 +155,7 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            Text(
-                text = "Storage",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-            ) {
-                Column(modifier = Modifier.padding(vertical = 8.dp)) {
-                    SettingsItem(
-                        icon = Icons.Filled.Storage,
-                        title = "Storage Used",
-                        subtitle = storageInfo
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
+            // App Info Section
             Text(
                 text = "App Info",
                 style = MaterialTheme.typography.titleMedium,
@@ -165,6 +177,18 @@ fun SettingsScreen(
                     )
                 }
             }
+        }
+
+        // Language Selection Dialog
+        if (showLanguageDialog) {
+            LanguageSelectionDialog(
+                currentLanguage = language,
+                onLanguageSelected = { newLanguage ->
+                    viewModel.setLanguage(newLanguage)
+                    showLanguageDialog = false
+                },
+                onDismiss = { showLanguageDialog = false }
+            )
         }
     }
 }
@@ -205,21 +229,69 @@ fun Modifier.clickableWithoutRipple(onClick: () -> Unit): Modifier {
     )
 }
 
-private fun calculateAudioStorage(context: Context): String {
-    return try {
-        val musicDir = context.getExternalFilesDir(Environment.DIRECTORY_MUSIC)
-        val totalSize = musicDir?.walkTopDown()
-            ?.filter { it.isFile }
-            ?.sumOf { it.length() } ?: 0L
-
-        when {
-            totalSize == 0L -> "0 MB"
-            totalSize < 1024 -> "${totalSize}B"
-            totalSize < 1024 * 1024 -> String.format("%.1fKB", totalSize / 1024f)
-            totalSize < 1024 * 1024 * 1024 -> String.format("%.1fMB", totalSize / (1024f * 1024f))
-            else -> String.format("%.2fGB", totalSize / (1024f * 1024f * 1024f))
+@Composable
+fun LanguageSelectionDialog(
+    currentLanguage: String,
+    onLanguageSelected: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Select Language") },
+        text = {
+            Column {
+                LanguageOption(
+                    language = "en",
+                    displayName = "English",
+                    isSelected = currentLanguage == "en",
+                    onSelect = { onLanguageSelected("en") }
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                LanguageOption(
+                    language = "ru",
+                    displayName = "Русский",
+                    isSelected = currentLanguage == "ru",
+                    onSelect = { onLanguageSelected("ru") }
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                LanguageOption(
+                    language = "zh",
+                    displayName = "中文",
+                    isSelected = currentLanguage == "zh",
+                    onSelect = { onLanguageSelected("zh") }
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
         }
-    } catch (e: Exception) {
-        "Unable to calculate"
+    )
+}
+
+@Composable
+fun LanguageOption(
+    language: String,
+    displayName: String,
+    isSelected: Boolean,
+    onSelect: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onSelect)
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        RadioButton(
+            selected = isSelected,
+            onClick = onSelect
+        )
+        Spacer(modifier = Modifier.width(12.dp))
+        Text(
+            text = displayName,
+            style = MaterialTheme.typography.bodyLarge
+        )
     }
 }
