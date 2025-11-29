@@ -18,6 +18,7 @@ class AppPreferences(private val context: Context) {
         private val SESSION_EXPIRY = longPreferencesKey("session_expiry")
         private val REMEMBER_ME = booleanPreferencesKey("remember_me")
         private val DARK_THEME = booleanPreferencesKey("dark_theme")
+        private val LANGUAGE = stringPreferencesKey("language")
         private val SHUFFLE_ENABLED = booleanPreferencesKey("shuffle_enabled")
         private val REPEAT_MODE = stringPreferencesKey("repeat_mode")
         private val NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
@@ -123,5 +124,16 @@ class AppPreferences(private val context: Context) {
     fun shouldShowPlaybackNotifications(): Flow<Boolean> = context.dataStore.data
         .map { preferences ->
             preferences[SHOW_PLAYBACK_NOTIFICATIONS] ?: true // Default to enabled
+        }
+
+    suspend fun setLanguage(language: String) {
+        context.dataStore.edit { preferences ->
+            preferences[LANGUAGE] = language
+        }
+    }
+
+    fun getLanguage(): Flow<String> = context.dataStore.data
+        .map { preferences ->
+            preferences[LANGUAGE] ?: "en" // Default to English
         }
 }
