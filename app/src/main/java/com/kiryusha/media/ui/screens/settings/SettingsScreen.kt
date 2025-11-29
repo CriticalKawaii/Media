@@ -1,5 +1,6 @@
 package com.kiryusha.media.ui.screens.settings
 
+import android.app.Activity
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
@@ -12,6 +13,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.kiryusha.media.viewmodels.SettingsViewModel
@@ -22,6 +24,7 @@ fun SettingsScreen(
     viewModel: SettingsViewModel,
     onBackClick: () -> Unit
 ) {
+    val context = LocalContext.current
     val notificationsEnabled by viewModel.notificationsEnabled.collectAsState()
     val notificationSoundEnabled by viewModel.notificationSoundEnabled.collectAsState()
     val showPlaybackNotifications by viewModel.showPlaybackNotifications.collectAsState()
@@ -186,6 +189,8 @@ fun SettingsScreen(
                 onLanguageSelected = { newLanguage ->
                     viewModel.setLanguage(newLanguage)
                     showLanguageDialog = false
+                    // Recreate activity to apply language change
+                    (context as? Activity)?.recreate()
                 },
                 onDismiss = { showLanguageDialog = false }
             )

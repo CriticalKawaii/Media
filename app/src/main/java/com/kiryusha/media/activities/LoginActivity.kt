@@ -3,7 +3,6 @@ package com.kiryusha.media.activities
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.checkbox.MaterialCheckBox
@@ -17,7 +16,7 @@ import com.kiryusha.media.utils.SecurityUtils
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
-class LoginActivity : AppCompatActivity() {
+class LoginActivity : BaseActivity() {
     private lateinit var repository: UserRepository
     private lateinit var appPreferences: AppPreferences
     private lateinit var etLogin: TextInputEditText

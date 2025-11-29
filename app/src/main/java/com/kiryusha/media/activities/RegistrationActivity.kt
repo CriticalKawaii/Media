@@ -14,7 +14,6 @@ import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
 import com.kiryusha.media.R
-import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.kiryusha.media.MediaApplication
 import com.kiryusha.media.database.entities.User
@@ -28,7 +27,7 @@ import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import com.kiryusha.media.utils.ValidationUtils
 
-class RegistrationActivity : AppCompatActivity() {
+class RegistrationActivity : BaseActivity() {
     private lateinit var repository: UserRepository
     private lateinit var etLogin: TextInputEditText
     private lateinit var etUsername: TextInputEditText
