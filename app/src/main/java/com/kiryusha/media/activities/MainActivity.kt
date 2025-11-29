@@ -81,7 +81,15 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             var currentUserId by remember { mutableStateOf(-1) }
-            val darkTheme by settingsViewModel.darkTheme.collectAsState()
+            val themeMode by settingsViewModel.themeMode.collectAsState()
+            val isSystemInDarkTheme = androidx.compose.foundation.isSystemInDarkTheme()
+
+            val darkTheme = when (themeMode) {
+                "light" -> false
+                "dark" -> true
+                "system" -> isSystemInDarkTheme
+                else -> isSystemInDarkTheme
+            }
 
             LaunchedEffect(Unit) {
                 appPreferences.getUserId().collect { userId ->

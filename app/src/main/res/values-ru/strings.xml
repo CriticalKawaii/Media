@@ -51,4 +51,27 @@
     <string name="loading">Загрузка...</string>
     <string name="error">Ошибка</string>
     <string name="retry">Повторить</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Настройки</string>
+    <string name="settings_appearance">Внешний вид</string>
+    <string name="settings_theme">Тема</string>
+    <string name="settings_theme_light">Светлая</string>
+    <string name="settings_theme_dark">Тёмная</string>
+    <string name="settings_theme_system">Системная</string>
+    <string name="settings_language">Язык</string>
+    <string name="settings_language_en">English</string>
+    <string name="settings_language_ru">Русский</string>
+    <string name="settings_language_zh">中文</string>
+    <string name="settings_select_theme">Выберите тему</string>
+    <string name="settings_select_language">Выберите язык</string>
+    <string name="settings_notifications">Уведомления</string>
+    <string name="settings_notifications_enable">Включить уведомления</string>
+    <string name="settings_notifications_enable_desc">Разрешить приложению показывать уведомления</string>
+    <string name="settings_notifications_playback">Уведомления о воспроизведении</string>
+    <string name="settings_notifications_playback_desc">Показывать уведомления о текущем треке</string>
+    <string name="settings_notifications_sound">Звук уведомлений</string>
+    <string name="settings_notifications_sound_desc">Воспроизводить звук для уведомлений</string>
+    <string name="settings_app_info">О приложении</string>
+    <string name="settings_version">Версия</string>
 </resources>

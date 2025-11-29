@@ -24,6 +24,9 @@ class SettingsViewModel(
     private val _darkTheme = MutableStateFlow(false)
     val darkTheme: StateFlow<Boolean> = _darkTheme.asStateFlow()
 
+    private val _themeMode = MutableStateFlow("system")
+    val themeMode: StateFlow<String> = _themeMode.asStateFlow()
+
     private val _language = MutableStateFlow("en")
     val language: StateFlow<String> = _language.asStateFlow()
 
@@ -49,6 +52,12 @@ class SettingsViewModel(
         viewModelScope.launch {
             appPreferences.isDarkTheme().collect { enabled ->
                 _darkTheme.value = enabled
+            }
+        }
+
+        viewModelScope.launch {
+            appPreferences.getThemeMode().collect { mode ->
+                _themeMode.value = mode
             }
         }
 
@@ -80,6 +89,12 @@ class SettingsViewModel(
     fun setDarkTheme(enabled: Boolean) {
         viewModelScope.launch {
             appPreferences.setDarkTheme(enabled)
+        }
+    }
+
+    fun setThemeMode(mode: String) {
+        viewModelScope.launch {
+            appPreferences.setThemeMode(mode)
         }
     }
 

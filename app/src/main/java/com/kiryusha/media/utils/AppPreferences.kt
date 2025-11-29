@@ -17,7 +17,7 @@ class AppPreferences(private val context: Context) {
         private val SESSION_TOKEN = stringPreferencesKey("session_token")
         private val SESSION_EXPIRY = longPreferencesKey("session_expiry")
         private val REMEMBER_ME = booleanPreferencesKey("remember_me")
-        private val DARK_THEME = booleanPreferencesKey("dark_theme")
+        private val THEME_MODE = stringPreferencesKey("theme_mode") // "light", "dark", "system"
         private val LANGUAGE = stringPreferencesKey("language")
         private val SHUFFLE_ENABLED = booleanPreferencesKey("shuffle_enabled")
         private val REPEAT_MODE = stringPreferencesKey("repeat_mode")
@@ -62,13 +62,24 @@ class AppPreferences(private val context: Context) {
 
     suspend fun setDarkTheme(enabled: Boolean) {
         context.dataStore.edit { preferences ->
-            preferences[DARK_THEME] = enabled
+            preferences[THEME_MODE] = if (enabled) "dark" else "light"
         }
     }
 
     fun isDarkTheme(): Flow<Boolean> = context.dataStore.data
         .map { preferences ->
-            preferences[DARK_THEME] ?: false
+            preferences[THEME_MODE] == "dark"
+        }
+
+    suspend fun setThemeMode(mode: String) {
+        context.dataStore.edit { preferences ->
+            preferences[THEME_MODE] = mode
+        }
+    }
+
+    fun getThemeMode(): Flow<String> = context.dataStore.data
+        .map { preferences ->
+            preferences[THEME_MODE] ?: "system" // Default to system theme
         }
 
     suspend fun setShuffleEnabled(enabled: Boolean) {

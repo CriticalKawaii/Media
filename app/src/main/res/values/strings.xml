@@ -51,4 +51,27 @@
     <string name="loading">Loading...</string>
     <string name="error">Error</string>
     <string name="retry">Retry</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_appearance">Appearance</string>
+    <string name="settings_theme">Theme</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_theme_system">System Default</string>
+    <string name="settings_language">Language</string>
+    <string name="settings_language_en">English</string>
+    <string name="settings_language_ru">Русский</string>
+    <string name="settings_language_zh">中文</string>
+    <string name="settings_select_theme">Select Theme</string>
+    <string name="settings_select_language">Select Language</string>
+    <string name="settings_notifications">Notifications</string>
+    <string name="settings_notifications_enable">Enable Notifications</string>
+    <string name="settings_notifications_enable_desc">Allow the app to show notifications</string>
+    <string name="settings_notifications_playback">Playback Notifications</string>
+    <string name="settings_notifications_playback_desc">Show now playing notifications</string>
+    <string name="settings_notifications_sound">Notification Sounds</string>
+    <string name="settings_notifications_sound_desc">Play sound for notifications</string>
+    <string name="settings_app_info">App Info</string>
+    <string name="settings_version">Version</string>
 </resources>
