@@ -18,6 +18,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.kiryusha.media.R
+import com.kiryusha.media.utils.LocaleManager
 import com.kiryusha.media.viewmodels.SettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -205,7 +206,9 @@ fun SettingsScreen(
                 onLanguageSelected = { newLanguage ->
                     viewModel.setLanguage(newLanguage)
                     showLanguageDialog = false
-                    // Recreate activity to apply language change
+                    // Update application locale immediately
+                    LocaleManager.updateAppLocale(context, newLanguage)
+                    // Recreate activity to apply language change across all UI
                     (context as? Activity)?.recreate()
                 },
                 onDismiss = { showLanguageDialog = false }

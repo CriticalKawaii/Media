@@ -13,11 +13,14 @@ object LocaleManager {
         val config = Configuration(context.resources.configuration)
         config.setLocale(locale)
 
+        // Update configuration for both old and new Android versions
+        // This ensures the locale change propagates to all resources
+        @Suppress("DEPRECATION")
+        context.resources.updateConfiguration(config, context.resources.displayMetrics)
+
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             context.createConfigurationContext(config)
         } else {
-            @Suppress("DEPRECATION")
-            context.resources.updateConfiguration(config, context.resources.displayMetrics)
             context
         }
     }
@@ -29,5 +32,17 @@ object LocaleManager {
             @Suppress("DEPRECATION")
             context.resources.configuration.locale
         }
+    }
+
+    fun updateAppLocale(context: Context, languageCode: String) {
+        val locale = Locale(languageCode)
+        Locale.setDefault(locale)
+
+        val config = Configuration(context.applicationContext.resources.configuration)
+        config.setLocale(locale)
+
+        // Update application context resources
+        @Suppress("DEPRECATION")
+        context.applicationContext.resources.updateConfiguration(config, context.applicationContext.resources.displayMetrics)
     }
 }
