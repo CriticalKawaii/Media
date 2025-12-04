@@ -2,13 +2,11 @@
     <string name="app_name">Media</string>
     <string name="media_player">Media Player</string>
 
-    <!-- Navigation -->
     <string name="nav_library">Library</string>
     <string name="nav_playlists">Playlists</string>
     <string name="nav_player">Player</string>
     <string name="nav_profile">Profile</string>
 
-    <!-- Library -->
     <string name="library_empty_title">No music found</string>
     <string name="library_empty_message">Scan your device to find music files</string>
     <string name="library_scan">Scan Device</string>
@@ -21,7 +19,6 @@
     <string name="library_add_to_playlist_message">Add \"%s\" to:</string>
     <string name="library_create_new_playlist">Create New Playlist</string>
 
-    <!-- Player -->
     <string name="player_play">Play</string>
     <string name="player_pause">Pause</string>
     <string name="player_next">Next</string>
@@ -29,14 +26,12 @@
     <string name="player_shuffle">Shuffle</string>
     <string name="player_repeat">Repeat</string>
 
-    <!-- Playlists -->
     <string name="playlists_empty_title">No Playlists Yet</string>
     <string name="playlists_empty_message">Create your first playlist to organize your music</string>
     <string name="playlists_create">Create Playlist</string>
     <string name="playlist_name">Playlist Name</string>
     <string name="playlist_description">Description (optional)</string>
 
-    <!-- Profile -->
     <string name="profile_logout">Logout</string>
     <string name="profile_logout_confirm">Are you sure you want to logout?</string>
     <string name="profile_stats">Your Stats</string>
@@ -47,12 +42,10 @@
     <string name="profile_version">Version 1.0.0</string>
     <string name="profile_about_message">A beautiful and intuitive music player for Android, designed to provide the best listening experience.</string>
 
-    <!-- Permissions -->
     <string name="permission_required">Permission Required</string>
     <string name="permission_audio_message">This app needs access to your media files to play music.</string>
     <string name="permission_grant">Grant Permission</string>
 
-    <!-- Common -->
     <string name="ok">OK</string>
     <string name="cancel">Cancel</string>
     <string name="delete">Delete</string>
@@ -70,7 +63,6 @@
     <string name="share">Share</string>
     <string name="selected_count">%d selected</string>
 
-    <!-- Settings -->
     <string name="settings_title">Settings</string>
     <string name="settings_appearance">Appearance</string>
     <string name="settings_theme">Theme</string>

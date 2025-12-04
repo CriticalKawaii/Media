@@ -165,7 +165,6 @@ private fun SelectableTrackItem(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Checkbox
             Icon(
                 imageVector = if (isSelected) Icons.Filled.CheckCircle else Icons.Outlined.Circle,
                 contentDescription = if (isSelected) "Selected" else "Not selected",
@@ -177,7 +176,6 @@ private fun SelectableTrackItem(
                 modifier = Modifier.size(24.dp)
             )
 
-            // Album artwork
             AsyncImage(
                 model = track.albumArtUri,
                 contentDescription = "Album art",
@@ -188,7 +186,6 @@ private fun SelectableTrackItem(
                 contentScale = ContentScale.Crop
             )
 
-            // Track info
             Column(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -214,7 +211,6 @@ private fun SelectableTrackItem(
                 )
             }
 
-            // Duration
             Text(
                 text = track.getDurationFormatted(),
                 style = MaterialTheme.typography.bodySmall,

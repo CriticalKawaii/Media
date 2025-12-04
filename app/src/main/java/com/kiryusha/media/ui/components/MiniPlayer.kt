@@ -46,7 +46,6 @@ fun MiniPlayer(
             shadowElevation = 8.dp
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
-                // Progress indicator - thinner Apple Music style
                 LinearProgressIndicator(
                     progress = { progress },
                     modifier = Modifier
@@ -62,7 +61,6 @@ fun MiniPlayer(
                         .padding(horizontal = 16.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Album art - slightly larger and more rounded
                     AsyncImage(
                         model = track.albumArtUri,
                         contentDescription = "Album art",
@@ -74,7 +72,6 @@ fun MiniPlayer(
 
                     Spacer(modifier = Modifier.width(12.dp))
 
-                    // Track info
                     Column(
                         modifier = Modifier.weight(1f)
                     ) {
@@ -96,7 +93,6 @@ fun MiniPlayer(
 
                     Spacer(modifier = Modifier.width(8.dp))
 
-                    // Skip previous button
                     IconButton(
                         onClick = { playerViewModel.skipPrevious() }
                     ) {
@@ -108,7 +104,6 @@ fun MiniPlayer(
                         )
                     }
 
-                    // Play/Pause button - more prominent
                     IconButton(
                         onClick = { playerViewModel.togglePlayPause() }
                     ) {
@@ -120,7 +115,6 @@ fun MiniPlayer(
                         )
                     }
 
-                    // Skip next button
                     IconButton(
                         onClick = { playerViewModel.skipNext() }
                     ) {

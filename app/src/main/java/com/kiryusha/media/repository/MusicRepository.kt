@@ -21,7 +21,6 @@ class MusicRepository(
     private val userTrackDao: UserTrackDao
 ) {
 
-    // User-specific track operations
     fun getUserTracks(userId: Int): Flow<List<Track>> = userTrackDao.getUserTracks(userId)
 
     fun getAllTracks(): Flow<List<Track>> = trackDao.getAllTracks()
@@ -76,12 +75,9 @@ class MusicRepository(
     }
 
     suspend fun importTracks(userId: Int, tracks: List<Track>) {
-        // Insert each track and associate it with the user
         val userTracks = tracks.mapNotNull { track ->
-            // Insert track into global table (will be ignored if already exists due to file_path unique constraint)
             val insertedId = trackDao.insertTrack(track)
 
-            // Get the track by file path (either newly inserted or existing)
             val existingTrack = trackDao.getTrackByFilePath(track.filePath)
 
             existingTrack?.let {
@@ -89,7 +85,6 @@ class MusicRepository(
             }
         }
 
-        // Add user-track associations (will be ignored if already exists due to primary key constraint)
         userTrackDao.addUserTracks(userTracks)
     }
 
@@ -120,11 +115,7 @@ class MusicRepository(
     }
 
     suspend fun deleteTrack(userId: Int, track: Track) {
-        // Remove from user's library only
         userTrackDao.removeUserTrack(userId, track.trackId)
-
-        // Optional: Clean up orphaned tracks (tracks not in any user's library)
-        // We'll keep tracks in the global table for now to avoid data loss
     }
 
     suspend fun deleteTracks(userId: Int, tracks: List<Track>) {

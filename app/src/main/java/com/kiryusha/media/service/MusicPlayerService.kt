@@ -99,7 +99,6 @@ class MusicPlayerService : MediaSessionService() {
         notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         createNotificationChannel()
 
-        // Register notification action receiver
         val filter = IntentFilter().apply {
             addAction(ACTION_PLAY_PAUSE)
             addAction(ACTION_PREVIOUS)
@@ -118,7 +117,6 @@ class MusicPlayerService : MediaSessionService() {
                         if (isPlaying) {
                             startForeground(NOTIFICATION_ID, createNotification())
                         } else {
-                            // Update notification to show play button when paused
                             notificationManager.notify(NOTIFICATION_ID, createNotification())
                         }
                     }
@@ -160,7 +158,6 @@ class MusicPlayerService : MediaSessionService() {
         try {
             unregisterReceiver(notificationActionReceiver)
         } catch (e: IllegalArgumentException) {
-            // Receiver was already unregistered
         }
         mediaSession?.run {
             player.release()
@@ -211,7 +208,6 @@ class MusicPlayerService : MediaSessionService() {
 
         val notificationSoundEnabled = appPreferences.isNotificationSoundEnabled().first()
 
-        // Create notification actions
         val previousIntent = Intent(ACTION_PREVIOUS).apply {
             setPackage(packageName)
         }
@@ -280,7 +276,6 @@ class MusicPlayerService : MediaSessionService() {
             builder.setSilent(true)
         }
 
-        // Load and set album artwork
         val artworkUri = currentItem?.mediaMetadata?.artworkUri
         if (artworkUri != null) {
             val bitmap = loadArtwork(artworkUri.toString())

@@ -6,9 +6,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
-// Apple Music-inspired typography
 val Typography = Typography(
-    // Display styles
     displayLarge = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Bold,
@@ -24,7 +22,6 @@ val Typography = Typography(
         letterSpacing = (-0.3).sp
     ),
 
-    // Headline styles
     headlineLarge = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Bold,
@@ -40,7 +37,6 @@ val Typography = Typography(
         letterSpacing = (-0.2).sp
     ),
 
-    // Title styles
     titleLarge = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.SemiBold,
@@ -63,7 +59,6 @@ val Typography = Typography(
         letterSpacing = (-0.1).sp
     ),
 
-    // Body styles
     bodyLarge = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Normal,
@@ -86,7 +81,6 @@ val Typography = Typography(
         letterSpacing = (-0.1).sp
     ),
 
-    // Label styles
     labelLarge = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Medium,

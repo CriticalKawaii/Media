@@ -70,14 +70,12 @@ fun LibraryScreen(
     var selectedTracks by remember { mutableStateOf(setOf<Long>()) }
     var showBulkDeleteConfirmDialog by remember { mutableStateOf(false) }
 
-    // Tooltip management
     val tooltipManager = rememberTooltipManager()
     var currentOnboardingStep by remember { mutableStateOf(0) }
     var showOnboarding by remember { mutableStateOf(tooltipManager.shouldShowOnboarding()) }
     var showLongPressTooltip by remember { mutableStateOf(false) }
     var active by remember { mutableStateOf(false) }
 
-    // Show track selection screen if available
     if (showTrackSelection) {
         TrackSelectionScreen(
             availableTracks = availableTracks,
@@ -115,7 +113,6 @@ fun LibraryScreen(
                         }
                     }
                 ) {
-                    // Content not used since active is always false
                 }
             } else {
                 TopAppBar(
@@ -138,7 +135,6 @@ fun LibraryScreen(
                     },
                     actions = {
                         if (selectionMode) {
-                            // Selection mode actions
                             if (selectedTracks.isNotEmpty()) {
                                 IconButton(onClick = {
                                     showBulkDeleteConfirmDialog = true
@@ -159,8 +155,6 @@ fun LibraryScreen(
                                 )
                             }
                         } else {
-                            // Normal mode actions
-                            // View mode toggle
                             IconButton(onClick = {
                                 viewModel.cycleViewMode()
                             }) {
@@ -174,7 +168,6 @@ fun LibraryScreen(
                                 )
                             }
 
-                            // Show selection mode button only in TRACKS view
                             if (viewMode == ViewMode.TRACKS && tracks.isNotEmpty()) {
                                 IconButton(onClick = {
                                     selectionMode = true
@@ -229,7 +222,6 @@ fun LibraryScreen(
                 }
                 else -> {
                     Column {
-                        // Show long press tooltip
                         if (showLongPressTooltip && tooltipManager.shouldShow(TooltipManager.TOOLTIP_LONG_PRESS_TRACK)) {
                             ContextTooltip(
                                 message = "Long press any track to add it to a playlist or see more options",
@@ -317,7 +309,6 @@ fun LibraryScreen(
                                     ArtistsView(
                                         tracks = tracks,
                                         onArtistClick = { artistName ->
-                                            // Filter tracks by artist and play them
                                             val artistTracks = tracks.filter { it.artist == artistName }
                                             if (artistTracks.isNotEmpty()) {
                                                 onTrackClick(artistTracks, 0)
@@ -332,7 +323,6 @@ fun LibraryScreen(
             }
         }
 
-        // Onboarding dialog
         if (showOnboarding && currentOnboardingStep < OnboardingSteps.steps.size) {
             TooltipDialog(
                 step = OnboardingSteps.steps[currentOnboardingStep],
@@ -356,7 +346,6 @@ fun LibraryScreen(
             )
         }
 
-        // Add to playlist dialog
         showAddToPlaylistDialog?.let { track ->
             AddToPlaylistDialog(
                 track = track,
@@ -382,7 +371,6 @@ fun LibraryScreen(
             )
         }
 
-        // Delete confirmation dialog for single track
         showDeleteConfirmDialog?.let { track ->
             DeleteTrackConfirmDialog(
                 trackTitle = track.title,
@@ -394,7 +382,6 @@ fun LibraryScreen(
             )
         }
 
-        // Bulk delete confirmation dialog
         if (showBulkDeleteConfirmDialog) {
             DeleteTracksConfirmDialog(
                 trackCount = selectedTracks.size,
@@ -484,7 +471,6 @@ fun SwipeableTrackItem(
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (selectionMode) {
-                // Show checkbox in selection mode
                 Checkbox(
                     checked = isSelected,
                     onCheckedChange = { onClick() },
@@ -732,7 +718,6 @@ fun AlbumItem(
             .fillMaxWidth()
             .clickable(onClick = onClick)
     ) {
-        // Album art
         AsyncImage(
             model = album.coverUri,
             contentDescription = album.name,
@@ -745,7 +730,6 @@ fun AlbumItem(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Album name
         Text(
             text = album.name,
             style = MaterialTheme.typography.titleSmall,
@@ -757,7 +741,6 @@ fun AlbumItem(
 
         Spacer(modifier = Modifier.height(2.dp))
 
-        // Artist name
         Text(
             text = album.artist,
             style = MaterialTheme.typography.bodySmall,
@@ -986,7 +969,6 @@ fun ArtistItem(
             .fillMaxWidth()
             .clickable(onClick = onClick)
     ) {
-        // Artist image (circular)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1005,7 +987,6 @@ fun ArtistItem(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Artist name
         Text(
             text = artistInfo.name,
             style = MaterialTheme.typography.titleSmall,
@@ -1017,7 +998,6 @@ fun ArtistItem(
 
         Spacer(modifier = Modifier.height(2.dp))
 
-        // Track count
         Text(
             text = "${artistInfo.trackCount} ${if (artistInfo.trackCount == 1) "track" else "tracks"}",
             style = MaterialTheme.typography.bodySmall,

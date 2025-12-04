@@ -11,7 +11,6 @@
         android:layout_height="wrap_content"
         android:padding="32dp">
 
-        <!--Title-->
         <LinearLayout
             android:id="@+id/ll_register_title"
             android:layout_width="wrap_content"
@@ -39,7 +38,6 @@
 
         </LinearLayout>
 
-        <!--Card-->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/card_register"
             android:layout_width="match_parent"
@@ -58,7 +56,6 @@
                 android:orientation="vertical"
                 android:padding="24dp">
 
-                <!--Login-->
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/til_login"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
@@ -76,7 +73,6 @@
 
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!--Username-->
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/til_username"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
@@ -94,7 +90,6 @@
                         android:maxLines="1" />
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!--Password-->
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/til_password"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
@@ -114,7 +109,6 @@
 
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!--Confirm Password-->
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/til_confirm_password"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
@@ -134,7 +128,6 @@
 
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!--Privacy Policy Checkbox-->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -171,7 +164,6 @@
                     android:textSize="12sp"
                     android:visibility="gone"/>
 
-                <!--Register button-->
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_register"
                     android:layout_width="match_parent"
@@ -183,7 +175,6 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!--Login link-->
         <LinearLayout
             android:id="@+id/ll_login"
             android:layout_width="wrap_content"

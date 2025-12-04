@@ -2,13 +2,11 @@
     <string name="app_name">Media</string>
     <string name="media_player">媒体播放器</string>
 
-    <!-- Navigation -->
     <string name="nav_library">音乐库</string>
     <string name="nav_playlists">播放列表</string>
     <string name="nav_player">播放器</string>
     <string name="nav_profile">个人资料</string>
 
-    <!-- Library -->
     <string name="library_empty_title">未找到音乐</string>
     <string name="library_empty_message">扫描您的设备以查找音乐文件</string>
     <string name="library_scan">扫描设备</string>
@@ -21,7 +19,6 @@
     <string name="library_add_to_playlist_message">将\"%s\"添加到:</string>
     <string name="library_create_new_playlist">创建新播放列表</string>
 
-    <!-- Player -->
     <string name="player_play">播放</string>
     <string name="player_pause">暂停</string>
     <string name="player_next">下一首</string>
@@ -29,14 +26,12 @@
     <string name="player_shuffle">随机播放</string>
     <string name="player_repeat">循环播放</string>
 
-    <!-- Playlists -->
     <string name="playlists_empty_title">还没有播放列表</string>
     <string name="playlists_empty_message">创建您的第一个播放列表来整理音乐</string>
     <string name="playlists_create">创建播放列表</string>
     <string name="playlist_name">播放列表名称</string>
     <string name="playlist_description">描述（可选）</string>
 
-    <!-- Profile -->
     <string name="profile_logout">退出登录</string>
     <string name="profile_logout_confirm">您确定要退出登录吗？</string>
     <string name="profile_stats">您的统计</string>
@@ -47,12 +42,10 @@
     <string name="profile_version">版本 1.0.0</string>
     <string name="profile_about_message">一款美观直观的 Android 音乐播放器，旨在提供最佳的聆听体验。</string>
 
-    <!-- Permissions -->
     <string name="permission_required">需要权限</string>
     <string name="permission_audio_message">此应用需要访问您的媒体文件才能播放音乐。</string>
     <string name="permission_grant">授予权限</string>
 
-    <!-- Common -->
     <string name="ok">确定</string>
     <string name="cancel">取消</string>
     <string name="delete">删除</string>
@@ -70,7 +63,6 @@
     <string name="share">分享</string>
     <string name="selected_count">已选择 %d 项</string>
 
-    <!-- Settings -->
     <string name="settings_title">设置</string>
     <string name="settings_appearance">外观</string>
     <string name="settings_theme">主题</string>

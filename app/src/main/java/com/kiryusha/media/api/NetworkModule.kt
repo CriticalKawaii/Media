@@ -7,9 +7,6 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
-/**
- * Network module for creating Retrofit instances
- */
 object NetworkModule {
 
     private const val LYRICS_BASE_URL = "https://api.lyrics.ovh/"

@@ -226,7 +226,6 @@ fun PlayerScreen(
 
                         Spacer(modifier = Modifier.height(12.dp))
 
-                        // Additional Controls
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceEvenly
@@ -277,7 +276,6 @@ fun PlayerScreen(
             }
         }
 
-        // Expanded Album Art Dialog
         if (showExpandedArt) {
             ExpandedAlbumArtDialog(
                 albumArtUri = currentTrack?.albumArtUri,
@@ -285,7 +283,6 @@ fun PlayerScreen(
             )
         }
 
-        // Add to Playlist Dialog
         if (showAddToPlaylistDialog && currentTrack != null) {
             AddToPlaylistDialog(
                 track = currentTrack!!,
@@ -296,13 +293,11 @@ fun PlayerScreen(
                     showAddToPlaylistDialog = false
                 },
                 onCreateNewPlaylist = {
-                    // Could add create playlist flow here
                     showAddToPlaylistDialog = false
                 }
             )
         }
 
-        // Queue Dialog
         if (showQueueDialog) {
             QueueDialog(
                 playlist = playlist,
@@ -324,7 +319,6 @@ fun PlayerScreen(
             )
         }
 
-        // Lyrics Dialog
         if (showLyricsDialog && currentTrack != null) {
             LyricsDialog(
                 track = currentTrack!!,
@@ -376,7 +370,6 @@ fun SwipeableAlbumArt(
             contentScale = ContentScale.Crop
         )
 
-        // Swipe hint indicators
         if (abs(offsetX) > 50) {
             Icon(
                 imageVector = if (offsetX > 0) Icons.Filled.SkipPrevious else Icons.Filled.SkipNext,
@@ -511,13 +504,11 @@ fun PlaybackControls(
     Column(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Main controls
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Previous
             IconButton(
                 onClick = onSkipPrevious,
                 modifier = Modifier.size(52.dp)
@@ -529,7 +520,6 @@ fun PlaybackControls(
                 )
             }
 
-            // Play/Pause - Larger Apple Music style button
             FloatingActionButton(
                 onClick = onPlayPause,
                 modifier = Modifier.size(68.dp),
@@ -546,7 +536,6 @@ fun PlaybackControls(
                 )
             }
 
-            // Next
             IconButton(
                 onClick = onSkipNext,
                 modifier = Modifier.size(52.dp)
@@ -561,13 +550,11 @@ fun PlaybackControls(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // Secondary controls (shuffle and repeat)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Shuffle
             IconButton(onClick = onToggleShuffle) {
                 Icon(
                     imageVector = Icons.Filled.Shuffle,
@@ -583,7 +570,6 @@ fun PlaybackControls(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            // Repeat
             IconButton(onClick = onToggleRepeat) {
                 Icon(
                     imageVector = when (repeatMode) {
@@ -642,7 +628,6 @@ fun QueueDialog(
             Column(
                 modifier = Modifier.fillMaxSize()
             ) {
-                // Header
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -662,7 +647,6 @@ fun QueueDialog(
 
                 HorizontalDivider()
 
-                // Track list
                 if (tracks.isEmpty()) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
@@ -717,7 +701,6 @@ fun QueueDialog(
                                             .detectReorderAfterLongPress(reorderableState),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        // Drag handle
                                         Icon(
                                             imageVector = Icons.Filled.DragHandle,
                                             contentDescription = "Reorder",
@@ -819,7 +802,6 @@ fun LyricsDialog(
             Column(
                 modifier = Modifier.fillMaxSize()
             ) {
-                // Header
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -850,7 +832,6 @@ fun LyricsDialog(
 
                 HorizontalDivider()
 
-                // Lyrics content
                 Box(
                     modifier = Modifier
                         .fillMaxSize()

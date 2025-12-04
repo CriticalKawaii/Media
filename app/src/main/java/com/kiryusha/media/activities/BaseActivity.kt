@@ -15,14 +15,11 @@ abstract class BaseActivity : AppCompatActivity() {
         val appPreferences = AppPreferences(newBase)
         var languageCode = "en"
 
-        // Try to get saved language synchronously (blocking)
-        // This is necessary in attachBaseContext
         try {
             kotlinx.coroutines.runBlocking {
                 languageCode = appPreferences.getLanguage().first()
             }
         } catch (e: Exception) {
-            // Use default language if error
         }
 
         val context = LocaleManager.setLocale(newBase, languageCode)

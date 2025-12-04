@@ -144,7 +144,6 @@ class MainActivity : ComponentActivity() {
         lifecycleScope.launch {
             appPreferences.clearSession()
             musicPlayerController.release()
-            // Stop the music service to ensure clean state
             stopService(Intent(this@MainActivity, com.kiryusha.media.service.MusicPlayerService::class.java))
             startActivity(Intent(this@MainActivity, LoginActivity::class.java))
             finish()
@@ -160,7 +159,6 @@ class MainActivity : ComponentActivity() {
                 languageCode = prefs.getLanguage().first()
             }
         } catch (e: Exception) {
-            // Use default language if error
         }
 
         val context = com.kiryusha.media.utils.LocaleManager.setLocale(newBase, languageCode)
@@ -189,10 +187,8 @@ fun MainScreen(
 
     Scaffold(
         bottomBar = {
-            // Hide entire bottom bar (MiniPlayer + NavigationBar) when on Player screen for fullscreen experience
             if (currentDestination?.route != Screen.Player.route) {
                 Column {
-                    // MiniPlayer above bottom navigation
                     MiniPlayer(
                         onNavigateToPlayer = {
                             navController.navigate(Screen.Player.route) {
@@ -202,7 +198,6 @@ fun MainScreen(
                         playerViewModel = playerViewModel
                     )
 
-                    // Bottom Navigation Bar (without Player tab)
                     NavigationBar {
                         val items = listOf(
                             BottomNavItem(androidx.compose.ui.res.stringResource(com.kiryusha.media.R.string.nav_library), Screen.Library.route, Icons.Filled.LibraryMusic),

@@ -79,7 +79,6 @@ class MusicPlayerController(private val context: Context) {
             }
         })
 
-        // Initialize current media item index
         _currentMediaItemIndex.value = exoPlayer?.currentMediaItemIndex ?: 0
     }
 
@@ -274,7 +273,6 @@ class MusicPlayerController(private val context: Context) {
                     )
                     .build()
 
-                // Add after current item (current index + 1)
                 val nextPosition = player.currentMediaItemIndex + 1
                 player.addMediaItem(nextPosition, mediaItem)
             } catch (e: Exception) {
@@ -300,7 +298,6 @@ class MusicPlayerController(private val context: Context) {
                         .build()
                 }
 
-                // Add after current item (current index + 1)
                 val nextPosition = player.currentMediaItemIndex + 1
                 player.addMediaItems(nextPosition, mediaItems)
             } catch (e: Exception) {
@@ -324,12 +321,9 @@ class MusicPlayerController(private val context: Context) {
     }
 
     fun release() {
-        // Stop playback and clear the playlist
         exoPlayer?.stop()
         exoPlayer?.clearMediaItems()
-        // Unbind from service - let the service manage its own lifecycle
         unbindService()
-        // Don't release the player here as it's owned by the service
         exoPlayer = null
     }
 }

@@ -10,7 +10,6 @@
         android:layout_height="match_parent"
         android:padding="32dp">
 
-        <!--Logo-->
         <TextView
             android:id="@+id/tv_app_title"
             android:layout_width="wrap_content"
@@ -36,7 +35,6 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"/>
 
-        <!--Card-->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/card_login"
             android:layout_width="match_parent"
@@ -55,7 +53,6 @@
                 android:orientation="vertical"
                 android:padding="24dp">
 
-                <!--Login-->
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/til_login"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
@@ -72,7 +69,6 @@
                         android:maxLines="1" />
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!--Password-->
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/til_password"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
@@ -91,7 +87,6 @@
                         android:maxLines="1" />
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!--Remember Me Checkbox-->
                 <com.google.android.material.checkbox.MaterialCheckBox
                     android:id="@+id/cb_remember_me"
                     android:layout_width="wrap_content"
@@ -100,7 +95,6 @@
                     android:text="Запомнить меня"
                     android:textSize="14sp" />
 
-                <!--Login Button-->
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_login"
                     android:layout_width="match_parent"
@@ -112,7 +106,6 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <!--Register link-->
         <LinearLayout
             android:id="@+id/ll_register"
             android:layout_width="wrap_content"
