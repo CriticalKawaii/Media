@@ -14,8 +14,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.kiryusha.media.R
 import com.kiryusha.media.viewmodels.ProfileViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -40,10 +42,10 @@ fun ProfileScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Profile") },
+                title = { Text(stringResource(R.string.nav_profile)) },
                 actions = {
                     IconButton(onClick = onNavigateToSettings) {
-                        Icon(Icons.Filled.Settings, "Settings")
+                        Icon(Icons.Filled.Settings, stringResource(R.string.settings_title))
                     }
                 }
             )
@@ -72,7 +74,7 @@ fun ProfileScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             Text(
-                text = "Settings",
+                text = stringResource(R.string.settings_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -81,8 +83,8 @@ fun ProfileScreen(
 
             SettingsItem(
                 icon = Icons.Filled.Info,
-                title = "About",
-                subtitle = "Version 1.0.0",
+                title = stringResource(R.string.profile_about),
+                subtitle = stringResource(R.string.profile_version),
                 onClick = { showAboutDialog = true }
             )
 
@@ -97,17 +99,17 @@ fun ProfileScreen(
                     containerColor = MaterialTheme.colorScheme.error
                 )
             ) {
-                Icon(Icons.AutoMirrored.Filled.ExitToApp, "Logout")
+                Icon(Icons.AutoMirrored.Filled.ExitToApp, stringResource(R.string.profile_logout))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Logout")
+                Text(stringResource(R.string.profile_logout))
             }
         }
 
         if (showLogoutDialog) {
             AlertDialog(
                 onDismissRequest = { showLogoutDialog = false },
-                title = { Text("Logout") },
-                text = { Text("Are you sure you want to logout?") },
+                title = { Text(stringResource(R.string.profile_logout)) },
+                text = { Text(stringResource(R.string.profile_logout_confirm)) },
                 confirmButton = {
                     Button(
                         onClick = {
@@ -118,12 +120,12 @@ fun ProfileScreen(
                             containerColor = MaterialTheme.colorScheme.error
                         )
                     ) {
-                        Text("Logout")
+                        Text(stringResource(R.string.profile_logout))
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { showLogoutDialog = false }) {
-                        Text("Cancel")
+                        Text(stringResource(R.string.cancel))
                     }
                 }
             )
@@ -133,14 +135,13 @@ fun ProfileScreen(
         if (showAboutDialog) {
             AlertDialog(
                 onDismissRequest = { showAboutDialog = false },
-                title = { Text("About Media Player") },
+                title = { Text(stringResource(R.string.profile_about)) },
                 text = {
                     Column {
-                        Text("Version 1.0.0", style = MaterialTheme.typography.bodyLarge)
+                        Text(stringResource(R.string.profile_version), style = MaterialTheme.typography.bodyLarge)
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            "A modern music player for Android with playlist management, " +
-                            "favorites, and playback history tracking.",
+                            stringResource(R.string.profile_about_message),
                             style = MaterialTheme.typography.bodyMedium
                         )
                         Spacer(modifier = Modifier.height(16.dp))
@@ -153,7 +154,7 @@ fun ProfileScreen(
                 },
                 confirmButton = {
                     TextButton(onClick = { showAboutDialog = false }) {
-                        Text("Close")
+                        Text(stringResource(R.string.close))
                     }
                 }
             )
@@ -223,7 +224,7 @@ fun StatsCard(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = "Your Stats",
+                text = stringResource(R.string.profile_stats),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -236,15 +237,15 @@ fun StatsCard(
             ) {
                 StatItem(
                     value = totalTracks.toString(),
-                    label = "Tracks"
+                    label = stringResource(R.string.profile_tracks)
                 )
                 StatItem(
                     value = totalPlaylists.toString(),
-                    label = "Playlists"
+                    label = stringResource(R.string.profile_playlists)
                 )
                 StatItem(
                     value = totalPlaytime,
-                    label = "Playtime"
+                    label = stringResource(R.string.profile_playtime)
                 )
             }
         }

@@ -205,9 +205,9 @@ fun MainScreen(
                     // Bottom Navigation Bar (without Player tab)
                     NavigationBar {
                         val items = listOf(
-                            BottomNavItem("Library", Screen.Library.route, Icons.Filled.LibraryMusic),
-                            BottomNavItem("Playlists", Screen.Playlists.route, Icons.Filled.QueueMusic),
-                            BottomNavItem("Profile", Screen.Profile.route, Icons.Filled.Person)
+                            BottomNavItem(androidx.compose.ui.res.stringResource(com.kiryusha.media.R.string.nav_library), Screen.Library.route, Icons.Filled.LibraryMusic),
+                            BottomNavItem(androidx.compose.ui.res.stringResource(com.kiryusha.media.R.string.nav_playlists), Screen.Playlists.route, Icons.Filled.QueueMusic),
+                            BottomNavItem(androidx.compose.ui.res.stringResource(com.kiryusha.media.R.string.nav_profile), Screen.Profile.route, Icons.Filled.Person)
                         )
 
                         items.forEach { item ->
@@ -262,7 +262,7 @@ fun PermissionRequiredScreen(onRequestPermission: () -> Unit) {
         ) {
             Icon(
                 imageVector = Icons.Filled.Info,
-                contentDescription = "Permission Required",
+                contentDescription = androidx.compose.ui.res.stringResource(com.kiryusha.media.R.string.permission_required),
                 modifier = Modifier.size(64.dp),
                 tint = MaterialTheme.colorScheme.primary
             )
@@ -270,14 +270,14 @@ fun PermissionRequiredScreen(onRequestPermission: () -> Unit) {
             Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = "Permission Required",
+                text = androidx.compose.ui.res.stringResource(com.kiryusha.media.R.string.permission_required),
                 style = MaterialTheme.typography.headlineMedium
             )
 
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "This app needs access to your media files to play music.",
+                text = androidx.compose.ui.res.stringResource(com.kiryusha.media.R.string.permission_audio_message),
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center
             )
@@ -285,7 +285,7 @@ fun PermissionRequiredScreen(onRequestPermission: () -> Unit) {
             Spacer(modifier = Modifier.height(24.dp))
 
             Button(onClick = onRequestPermission) {
-                Text("Grant Permission")
+                Text(androidx.compose.ui.res.stringResource(com.kiryusha.media.R.string.permission_grant))
             }
         }
     }
