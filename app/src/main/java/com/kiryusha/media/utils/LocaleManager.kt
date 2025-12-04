@@ -13,8 +13,6 @@ object LocaleManager {
         val config = Configuration(context.resources.configuration)
         config.setLocale(locale)
 
-        // Update configuration for both old and new Android versions
-        // This ensures the locale change propagates to all resources
         @Suppress("DEPRECATION")
         context.resources.updateConfiguration(config, context.resources.displayMetrics)
 
@@ -41,7 +39,6 @@ object LocaleManager {
         val config = Configuration(context.applicationContext.resources.configuration)
         config.setLocale(locale)
 
-        // Update application context resources
         @Suppress("DEPRECATION")
         context.applicationContext.resources.updateConfiguration(config, context.applicationContext.resources.displayMetrics)
     }

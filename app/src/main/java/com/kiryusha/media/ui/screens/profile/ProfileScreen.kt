@@ -131,7 +131,6 @@ fun ProfileScreen(
             )
         }
 
-        // About Dialog
         if (showAboutDialog) {
             AlertDialog(
                 onDismissRequest = { showAboutDialog = false },

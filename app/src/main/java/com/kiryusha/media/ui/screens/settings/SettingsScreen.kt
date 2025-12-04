@@ -57,7 +57,6 @@ fun SettingsScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
-            // Appearance Section
             Text(
                 text = stringResource(R.string.settings_appearance),
                 style = MaterialTheme.typography.titleMedium,
@@ -102,7 +101,6 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Notifications Section
             Text(
                 text = stringResource(R.string.settings_notifications),
                 style = MaterialTheme.typography.titleMedium,
@@ -163,7 +161,6 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // App Info Section
             Text(
                 text = stringResource(R.string.settings_app_info),
                 style = MaterialTheme.typography.titleMedium,
@@ -187,7 +184,6 @@ fun SettingsScreen(
             }
         }
 
-        // Theme Selection Dialog
         if (showThemeDialog) {
             ThemeSelectionDialog(
                 currentTheme = themeMode,
@@ -199,16 +195,13 @@ fun SettingsScreen(
             )
         }
 
-        // Language Selection Dialog
         if (showLanguageDialog) {
             LanguageSelectionDialog(
                 currentLanguage = language,
                 onLanguageSelected = { newLanguage ->
                     viewModel.setLanguage(newLanguage)
                     showLanguageDialog = false
-                    // Update application locale immediately
                     LocaleManager.updateAppLocale(context, newLanguage)
-                    // Recreate activity to apply language change across all UI
                     (context as? Activity)?.recreate()
                 },
                 onDismiss = { showLanguageDialog = false }

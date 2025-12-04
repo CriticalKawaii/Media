@@ -126,7 +126,6 @@ fun PlaylistItem(
     ) {
         val coverUri = playlistWithTracks.tracks.firstOrNull()?.albumArtUri
 
-        // Playlist cover art
         AsyncImage(
             model = coverUri,
             contentDescription = playlistWithTracks.playlist.name,
@@ -139,7 +138,6 @@ fun PlaylistItem(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Playlist name
         Text(
             text = playlistWithTracks.playlist.name,
             style = MaterialTheme.typography.titleSmall,
@@ -149,7 +147,6 @@ fun PlaylistItem(
 
         Spacer(modifier = Modifier.height(2.dp))
 
-        // Track count
         Text(
             text = "${playlistWithTracks.tracks.size} tracks",
             style = MaterialTheme.typography.bodySmall,

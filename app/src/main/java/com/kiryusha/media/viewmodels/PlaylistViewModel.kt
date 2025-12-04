@@ -111,7 +111,6 @@ class PlaylistViewModel(
         viewModelScope.launch {
             _uiState.value = PlaylistUiState.Loading
             try {
-                // Handle special case for Favorites playlist (playlistId = -1)
                 if (playlistId == -1L) {
                     val favorites = _favoriteTracks.value
                     val favoritesPlaylist = PlaylistWithTracks(
@@ -148,7 +147,6 @@ class PlaylistViewModel(
             try {
                 playlistRepository.addTrackToPlaylist(playlistId, trackId)
                 _uiState.value = PlaylistUiState.TrackAdded
-                // Reload current playlist if it's the one being modified
                 if (_currentPlaylist.value?.playlist?.playlistId == playlistId) {
                     loadPlaylist(playlistId)
                 }
@@ -163,7 +161,6 @@ class PlaylistViewModel(
             try {
                 playlistRepository.removeTrackFromPlaylist(playlistId, trackId)
                 _uiState.value = PlaylistUiState.TrackRemoved
-                // Reload current playlist
                 if (_currentPlaylist.value?.playlist?.playlistId == playlistId) {
                     loadPlaylist(playlistId)
                 }

@@ -95,7 +95,6 @@ class LoginActivity : BaseActivity() {
                 val user = repository.loginUser(login, hashedPassword)
 
                 if (user != null) {
-                    // Save session with DataStore
                     appPreferences.saveUserSession(user.uid, rememberMe)
 
                     Toast.makeText(

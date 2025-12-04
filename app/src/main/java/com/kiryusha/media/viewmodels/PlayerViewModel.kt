@@ -58,7 +58,6 @@ class PlayerViewModel(
     private var progressUpdateJob: Job? = null
 
     init {
-        // Observe player state from controller
         viewModelScope.launch {
             playerController.isPlaying.collect { playing ->
                 _isPlaying.value = playing
@@ -70,7 +69,6 @@ class PlayerViewModel(
             }
         }
 
-        // Observe media item changes from controller
         viewModelScope.launch {
             playerController.currentMediaItemIndex.collect { index ->
                 val currentPlaylist = _playlist.value
@@ -79,7 +77,6 @@ class PlayerViewModel(
                     val track = currentPlaylist[index]
                     _currentTrack.value = track
 
-                    // Update favorite status
                     try {
                         if (userId != -1) {
                             _isCurrentTrackFavorite.value = musicRepository.isFavorite(userId, track.trackId)
@@ -90,13 +87,11 @@ class PlayerViewModel(
                         _isCurrentTrackFavorite.value = false
                     }
 
-                    // Record play in history
                     try {
                         if (userId != -1) {
                             musicRepository.recordPlay(track.trackId, userId)
                         }
                     } catch (e: Exception) {
-                        // Silently ignore playback recording errors
                     }
                 }
             }
@@ -105,7 +100,6 @@ class PlayerViewModel(
 
     fun setUserId(id: Int) {
         userId = id
-        // Re-check favorite status for current track when user changes
         viewModelScope.launch {
             try {
                 _currentTrack.value?.let { track ->
@@ -116,7 +110,6 @@ class PlayerViewModel(
                     }
                 }
             } catch (e: Exception) {
-                // If favorite status check fails, default to false
                 _isCurrentTrackFavorite.value = false
             }
         }
@@ -129,7 +122,6 @@ class PlayerViewModel(
             _currentPosition.value = 0L
             _playerState.value = PlayerState.Playing
 
-            // Check if track is favorite
             try {
                 if (userId != -1) {
                     _isCurrentTrackFavorite.value = musicRepository.isFavorite(userId, track.trackId)
@@ -137,20 +129,16 @@ class PlayerViewModel(
                     _isCurrentTrackFavorite.value = false
                 }
             } catch (e: Exception) {
-                // If favorite status check fails, default to false
                 _isCurrentTrackFavorite.value = false
             }
 
-            // Play through controller
             playerController.playTrack(track)
 
-            // Record play in history
             try {
                 if (userId != -1) {
                     musicRepository.recordPlay(track.trackId, userId)
                 }
             } catch (e: Exception) {
-                // Silently ignore playback recording errors
             }
         }
     }
@@ -159,10 +147,8 @@ class PlayerViewModel(
         _playlist.value = tracks
         _currentIndex.value = startIndex
 
-        // Set playlist in player controller
         playerController.setPlaylist(tracks, startIndex)
 
-        // Apply current shuffle and repeat modes to the player
         playerController.setShuffleMode(_shuffleEnabled.value)
         val exoPlayerRepeatMode = when (_repeatMode.value) {
             RepeatMode.OFF -> androidx.media3.common.Player.REPEAT_MODE_OFF
@@ -173,7 +159,6 @@ class PlayerViewModel(
 
         if (tracks.isNotEmpty() && startIndex < tracks.size) {
             _currentTrack.value = tracks[startIndex]
-            // Check favorite status for initial track
             viewModelScope.launch {
                 try {
                     if (userId != -1) {
@@ -182,7 +167,6 @@ class PlayerViewModel(
                         _isCurrentTrackFavorite.value = false
                     }
                 } catch (e: Exception) {
-                    // If favorite status check fails, default to false
                     _isCurrentTrackFavorite.value = false
                 }
             }
@@ -198,18 +182,15 @@ class PlayerViewModel(
     }
 
     fun skipNext() {
-        // Use player's built-in next functionality to preserve playlist
         playerController.skipToNext()
     }
 
     fun skipPrevious() {
-        // If more than 3 seconds played, restart current track
         if (_currentPosition.value > 3000) {
             seekTo(0L)
             return
         }
 
-        // Use player's built-in previous functionality to preserve playlist
         playerController.skipToPrevious()
     }
 
@@ -241,7 +222,6 @@ class PlayerViewModel(
             RepeatMode.ONE -> RepeatMode.OFF
         }
 
-        // Apply repeat mode to ExoPlayer
         val exoPlayerRepeatMode = when (_repeatMode.value) {
             RepeatMode.OFF -> androidx.media3.common.Player.REPEAT_MODE_OFF
             RepeatMode.ALL -> androidx.media3.common.Player.REPEAT_MODE_ALL
@@ -256,14 +236,10 @@ class PlayerViewModel(
 
         if (trackIndex == -1) return
 
-        // Remove from player controller first
         playerController.removeTrackFromQueue(trackIndex)
 
-        // If it's the currently playing track, it will automatically skip to next
-        // But we need to update our current track
         if (trackIndex == _currentIndex.value) {
             if (currentPlaylist.size > 1) {
-                // Player will move to next track
                 val nextIndex = if (trackIndex < currentPlaylist.size - 1) trackIndex else 0
                 currentPlaylist.removeAt(trackIndex)
                 _currentIndex.value = nextIndex.coerceAtMost(currentPlaylist.size - 1)
@@ -271,17 +247,14 @@ class PlayerViewModel(
                     _currentTrack.value = currentPlaylist[_currentIndex.value]
                 }
             } else {
-                // Last track in queue
                 _currentTrack.value = null
             }
         } else {
-            // Adjust current index if needed
             if (trackIndex < _currentIndex.value) {
                 _currentIndex.value = _currentIndex.value - 1
             }
         }
 
-        // Remove the track from our playlist
         currentPlaylist.removeAt(trackIndex)
         _playlist.value = currentPlaylist
     }
@@ -291,7 +264,6 @@ class PlayerViewModel(
         currentPlaylist.add(track)
         _playlist.value = currentPlaylist
 
-        // Add to player controller
         playerController.addTrackToQueue(track)
     }
 
@@ -300,7 +272,6 @@ class PlayerViewModel(
         currentPlaylist.addAll(tracks)
         _playlist.value = currentPlaylist
 
-        // Add to player controller
         playerController.addTracksToQueue(tracks)
     }
 
@@ -310,7 +281,6 @@ class PlayerViewModel(
         currentPlaylist.add(insertPosition, track)
         _playlist.value = currentPlaylist
 
-        // Add to player controller
         playerController.addTrackNext(track)
     }
 
@@ -320,7 +290,6 @@ class PlayerViewModel(
         currentPlaylist.addAll(insertPosition, tracks)
         _playlist.value = currentPlaylist
 
-        // Add to player controller
         playerController.addTracksNext(tracks)
     }
 
@@ -331,28 +300,22 @@ class PlayerViewModel(
             toIndex >= 0 && toIndex < currentPlaylist.size &&
             fromIndex != toIndex) {
 
-            // Reorder in local playlist
             val movedTrack = currentPlaylist.removeAt(fromIndex)
             currentPlaylist.add(toIndex, movedTrack)
             _playlist.value = currentPlaylist
 
-            // Update current index if needed
             when {
                 fromIndex == _currentIndex.value -> {
-                    // Currently playing track was moved
                     _currentIndex.value = toIndex
                 }
                 fromIndex < _currentIndex.value && toIndex >= _currentIndex.value -> {
-                    // Track moved from before to after/at current position
                     _currentIndex.value = _currentIndex.value - 1
                 }
                 fromIndex > _currentIndex.value && toIndex <= _currentIndex.value -> {
-                    // Track moved from after to before/at current position
                     _currentIndex.value = _currentIndex.value + 1
                 }
             }
 
-            // Reorder in player controller
             playerController.reorderQueue(fromIndex, toIndex)
         }
     }
@@ -362,12 +325,10 @@ class PlayerViewModel(
         viewModelScope.launch {
             try {
                 musicRepository.toggleFavorite(userId, trackId, !isFavorite)
-                // Update current track favorite status if it's the track being toggled
                 if (_currentTrack.value?.trackId == trackId) {
                     _isCurrentTrackFavorite.value = !isFavorite
                 }
             } catch (e: Exception) {
-                // Handle error silently for now
             }
         }
     }

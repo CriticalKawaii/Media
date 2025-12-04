@@ -101,7 +101,6 @@ class LibraryViewModel(
                 if (tracks.isEmpty()) {
                     _uiState.value = LibraryUiState.Empty
                 } else {
-                    // Get existing track file paths to filter out duplicates
                     val existingPaths = allTracks.value.map { it.filePath }.toSet()
                     val newTracks = tracks.filter { it.filePath !in existingPaths }
 
@@ -232,7 +231,6 @@ class LibraryViewModel(
     }
 }
 
-// Enhanced PlayerViewModel with favorite toggle
 class EnhancedPlayerViewModel(
     private val musicRepository: MusicRepository,
     private val playerController: com.kiryusha.media.utils.MusicPlayerController
@@ -389,7 +387,6 @@ class EnhancedPlayerViewModel(
             try {
                 musicRepository.toggleFavorite(userId, trackId, !isFavorite)
             } catch (e: Exception) {
-                // Handle error
             }
         }
     }

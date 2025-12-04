@@ -47,7 +47,6 @@ class ProfileViewModel(
     }
 
     fun formatPlaytime(totalPlays: Int): String {
-        // Assume average song duration of 3.5 minutes
         val totalMinutes = (totalPlays * 3.5).toInt()
         val hours = totalMinutes / 60
         val minutes = totalMinutes % 60

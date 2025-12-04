@@ -16,7 +16,6 @@ class MediaApplication : Application() {
 
         private val MIGRATION_4_5 = object : Migration(4, 5) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                // Create new user_favorites table
                 db.execSQL("""
                     CREATE TABLE IF NOT EXISTS user_favorites (
                         userId INTEGER NOT NULL,
@@ -28,7 +27,6 @@ class MediaApplication : Application() {
                     )
                 """.trimIndent())
 
-                // Create a temporary table without is_favorite column
                 db.execSQL("""
                     CREATE TABLE tracks_new (
                         trackId INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -43,27 +41,22 @@ class MediaApplication : Application() {
                     )
                 """.trimIndent())
 
-                // Copy data from old table to new table (excluding is_favorite)
                 db.execSQL("""
                     INSERT INTO tracks_new (trackId, title, artist, album, duration_ms, file_path, album_art_uri, date_added, play_count)
                     SELECT trackId, title, artist, album, duration_ms, file_path, album_art_uri, date_added, play_count
                     FROM tracks
                 """.trimIndent())
 
-                // Drop old table
                 db.execSQL("DROP TABLE tracks")
 
-                // Rename new table to tracks
                 db.execSQL("ALTER TABLE tracks_new RENAME TO tracks")
 
-                // Recreate the index on file_path
                 db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_tracks_file_path ON tracks(file_path)")
             }
         }
 
         private val MIGRATION_5_6 = object : Migration(5, 6) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                // Create user_tracks table for per-user library isolation
                 db.execSQL("""
                     CREATE TABLE IF NOT EXISTS user_tracks (
                         userId INTEGER NOT NULL,
@@ -75,12 +68,9 @@ class MediaApplication : Application() {
                     )
                 """.trimIndent())
 
-                // Create indices for user_tracks
                 db.execSQL("CREATE INDEX IF NOT EXISTS index_user_tracks_userId ON user_tracks(userId)")
                 db.execSQL("CREATE INDEX IF NOT EXISTS index_user_tracks_trackId ON user_tracks(trackId)")
 
-                // Migrate existing tracks to all users (backwards compatibility)
-                // This ensures existing users see all existing tracks in their library
                 db.execSQL("""
                     INSERT INTO user_tracks (userId, trackId, added_at)
                     SELECT u.uid, t.trackId, t.date_added
@@ -92,7 +82,6 @@ class MediaApplication : Application() {
 
         private val MIGRATION_6_7 = object : Migration(6, 7) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                // Add lyrics column to tracks table
                 db.execSQL("ALTER TABLE tracks ADD COLUMN lyrics TEXT DEFAULT NULL")
             }
         }

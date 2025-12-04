@@ -54,7 +54,6 @@ fun AppNavigation(
                     navController.navigate(Screen.Player.route)
                 },
                 onAlbumClick = { album ->
-                    // Set the album's tracks as the current playlist
                     if (album.tracks.isNotEmpty()) {
                         playerViewModel.setPlaylist(album.tracks, 0)
                         navController.navigate(Screen.Player.route)
