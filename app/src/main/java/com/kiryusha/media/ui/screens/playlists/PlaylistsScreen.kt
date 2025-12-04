@@ -14,11 +14,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import com.kiryusha.media.R
 import com.kiryusha.media.database.entities.PlaylistWithTracks
 import com.kiryusha.media.viewmodels.PlaylistUiState
 import com.kiryusha.media.viewmodels.PlaylistViewModel
@@ -38,10 +40,10 @@ fun PlaylistsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Playlists") },
+                title = { Text(stringResource(R.string.nav_playlists)) },
                 actions = {
                     IconButton(onClick = { showCreateDialog = true }) {
-                        Icon(Icons.Filled.Add, "Create Playlist")
+                        Icon(Icons.Filled.Add, stringResource(R.string.playlists_create))
                     }
                 }
             )
@@ -50,7 +52,7 @@ fun PlaylistsScreen(
             FloatingActionButton(
                 onClick = { showCreateDialog = true }
             ) {
-                Icon(Icons.Filled.Add, "Create Playlist")
+                Icon(Icons.Filled.Add, stringResource(R.string.playlists_create))
             }
         }
     ) { paddingValues ->
@@ -175,14 +177,14 @@ fun EmptyPlaylistsView(onCreateClick: () -> Unit) {
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "No Playlists Yet",
+            text = stringResource(R.string.playlists_empty_title),
             style = MaterialTheme.typography.headlineMedium
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "Create your first playlist to organize your music",
+            text = stringResource(R.string.playlists_empty_message),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -192,7 +194,7 @@ fun EmptyPlaylistsView(onCreateClick: () -> Unit) {
         Button(onClick = onCreateClick) {
             Icon(Icons.Filled.Add, contentDescription = null)
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Create Playlist")
+            Text(stringResource(R.string.playlists_create))
         }
     }
 }
@@ -216,7 +218,7 @@ fun CreatePlaylistDialog(
                 modifier = Modifier.padding(24.dp)
             ) {
                 Text(
-                    text = "Create Playlist",
+                    text = stringResource(R.string.playlists_create),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold
                 )
@@ -226,7 +228,7 @@ fun CreatePlaylistDialog(
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Playlist Name") },
+                    label = { Text(stringResource(R.string.playlist_name)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
@@ -236,7 +238,7 @@ fun CreatePlaylistDialog(
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
-                    label = { Text("Description (optional)") },
+                    label = { Text(stringResource(R.string.playlist_description)) },
                     modifier = Modifier.fillMaxWidth(),
                     maxLines = 3
                 )
@@ -248,7 +250,7 @@ fun CreatePlaylistDialog(
                     horizontalArrangement = Arrangement.End
                 ) {
                     TextButton(onClick = onDismiss) {
-                        Text("Cancel")
+                        Text(stringResource(R.string.cancel))
                     }
 
                     Spacer(modifier = Modifier.width(8.dp))
@@ -261,7 +263,7 @@ fun CreatePlaylistDialog(
                         },
                         enabled = name.isNotBlank()
                     ) {
-                        Text("Create")
+                        Text(stringResource(R.string.create))
                     }
                 }
             }

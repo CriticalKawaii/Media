@@ -20,6 +20,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -27,6 +28,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import com.kiryusha.media.R
 import com.kiryusha.media.database.entities.Album
 import com.kiryusha.media.database.entities.PlaylistWithTracks
 import com.kiryusha.media.database.entities.Track
@@ -96,19 +98,19 @@ fun LibraryScreen(
                     onSearch = { },
                     active = false,
                     onActiveChange = { },
-                    placeholder = { Text("Search...") },
+                    placeholder = { Text(stringResource(R.string.search_placeholder)) },
                     leadingIcon = {
                         IconButton(onClick = {
                             showSearchBar = false
                             viewModel.setSearchQuery("")
                         }) {
-                            Icon(Icons.Filled.ArrowBack, "Close search")
+                            Icon(Icons.Filled.ArrowBack, stringResource(R.string.close_search))
                         }
                     },
                     trailingIcon = {
                         if (searchQuery.isNotEmpty()) {
                             IconButton(onClick = { viewModel.setSearchQuery("") }) {
-                                Icon(Icons.Filled.Close, "Clear search")
+                                Icon(Icons.Filled.Close, stringResource(R.string.clear_search))
                             }
                         }
                     }
@@ -119,9 +121,9 @@ fun LibraryScreen(
                 TopAppBar(
                     title = {
                         if (selectionMode) {
-                            Text("${selectedTracks.size} selected")
+                            Text(stringResource(R.string.selected_count, selectedTracks.size))
                         } else {
-                            Text("Library")
+                            Text(stringResource(R.string.nav_library))
                         }
                     },
                     navigationIcon = {
@@ -210,7 +212,7 @@ fun LibraryScreen(
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             CircularProgressIndicator()
                             Spacer(modifier = Modifier.height(16.dp))
-                            Text("Scanning for music files...")
+                            Text(stringResource(R.string.library_scanning))
                         }
                     }
                 }
@@ -541,7 +543,7 @@ fun SwipeableTrackItem(
                 onDismissRequest = { showMenu = false }
             ) {
                 DropdownMenuItem(
-                    text = { Text("Play next") },
+                    text = { Text(stringResource(R.string.library_play_next)) },
                     onClick = {
                         playerViewModel.addTrackNext(track)
                         showMenu = false
@@ -551,7 +553,7 @@ fun SwipeableTrackItem(
                     }
                 )
                 DropdownMenuItem(
-                    text = { Text("Add to queue") },
+                    text = { Text(stringResource(R.string.library_add_to_queue)) },
                     onClick = {
                         playerViewModel.addTrackToQueue(track)
                         showMenu = false
@@ -561,7 +563,7 @@ fun SwipeableTrackItem(
                     }
                 )
                 DropdownMenuItem(
-                    text = { Text("Add to playlist") },
+                    text = { Text(stringResource(R.string.library_add_to_playlist)) },
                     onClick = {
                         onLongClick?.invoke()
                         showMenu = false
@@ -571,7 +573,7 @@ fun SwipeableTrackItem(
                     }
                 )
                 DropdownMenuItem(
-                    text = { Text("Share") },
+                    text = { Text(stringResource(R.string.share)) },
                     onClick = {
                         showMenu = false
                         val shareIntent = android.content.Intent().apply {
@@ -587,7 +589,7 @@ fun SwipeableTrackItem(
                 )
                 if (onDeleteTrack != null) {
                     DropdownMenuItem(
-                        text = { Text("Remove from Library") },
+                        text = { Text(stringResource(R.string.library_remove)) },
                         onClick = {
                             onDeleteTrack()
                             showMenu = false
@@ -612,10 +614,10 @@ fun AddToPlaylistDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Add to Playlist") },
+        title = { Text(stringResource(R.string.library_add_to_playlist_title)) },
         text = {
             Column {
-                Text("Add \"${track.title}\" to:")
+                Text(stringResource(R.string.library_add_to_playlist_message, track.title))
                 Spacer(modifier = Modifier.height(16.dp))
 
                 playlists.forEach { playlist ->
@@ -635,14 +637,14 @@ fun AddToPlaylistDialog(
                 ) {
                     Icon(Icons.Filled.Add, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Create New Playlist")
+                    Text(stringResource(R.string.library_create_new_playlist))
                 }
             }
         },
         confirmButton = {},
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(R.string.cancel))
             }
         }
     )
@@ -658,13 +660,13 @@ fun CreatePlaylistDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Create Playlist") },
+        title = { Text(stringResource(R.string.playlists_create)) },
         text = {
             Column {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Playlist Name") },
+                    label = { Text(stringResource(R.string.playlist_name)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
@@ -674,7 +676,7 @@ fun CreatePlaylistDialog(
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
-                    label = { Text("Description (optional)") },
+                    label = { Text(stringResource(R.string.playlist_description)) },
                     modifier = Modifier.fillMaxWidth(),
                     maxLines = 3
                 )
@@ -689,12 +691,12 @@ fun CreatePlaylistDialog(
                 },
                 enabled = name.isNotBlank()
             ) {
-                Text("Create")
+                Text(stringResource(R.string.create))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(R.string.cancel))
             }
         }
     )

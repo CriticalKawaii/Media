@@ -12,6 +12,14 @@
     <string name="library_empty_title">Музыка не найдена</string>
     <string name="library_empty_message">Отсканируйте устройство для поиска музыкальных файлов</string>
     <string name="library_scan">Сканировать устройство</string>
+    <string name="library_scanning">Поиск музыкальных файлов...</string>
+    <string name="library_play_next">Играть следующим</string>
+    <string name="library_add_to_queue">Добавить в очередь</string>
+    <string name="library_add_to_playlist">Добавить в плейлист</string>
+    <string name="library_remove">Удалить из библиотеки</string>
+    <string name="library_add_to_playlist_title">Добавить в плейлист</string>
+    <string name="library_add_to_playlist_message">Добавить \"%s\" в:</string>
+    <string name="library_create_new_playlist">Создать новый плейлист</string>
 
     <!-- Player -->
     <string name="player_play">Воспроизвести</string>
@@ -35,6 +43,9 @@
     <string name="profile_tracks">Треки</string>
     <string name="profile_playlists">Плейлисты</string>
     <string name="profile_playtime">Время прослушивания</string>
+    <string name="profile_about">О медиа-плеере</string>
+    <string name="profile_version">Версия 1.0.0</string>
+    <string name="profile_about_message">Красивый и интуитивный музыкальный плеер для Android, созданный для наилучшего опыта прослушивания.</string>
 
     <!-- Permissions -->
     <string name="permission_required">Требуется разрешение</string>
@@ -48,9 +59,16 @@
     <string name="edit">Редактировать</string>
     <string name="save">Сохранить</string>
     <string name="search">Поиск</string>
+    <string name="search_placeholder">Поиск...</string>
+    <string name="close_search">Закрыть поиск</string>
+    <string name="clear_search">Очистить поиск</string>
     <string name="loading">Загрузка...</string>
     <string name="error">Ошибка</string>
     <string name="retry">Повторить</string>
+    <string name="create">Создать</string>
+    <string name="close">Закрыть</string>
+    <string name="share">Поделиться</string>
+    <string name="selected_count">Выбрано: %d</string>
 
     <!-- Settings -->
     <string name="settings_title">Настройки</string>
