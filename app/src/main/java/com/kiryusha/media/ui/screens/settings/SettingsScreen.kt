@@ -28,8 +28,6 @@ fun SettingsScreen(
     onBackClick: () -> Unit
 ) {
     val context = LocalContext.current
-    val notificationsEnabled by viewModel.notificationsEnabled.collectAsState()
-    val notificationSoundEnabled by viewModel.notificationSoundEnabled.collectAsState()
     val showPlaybackNotifications by viewModel.showPlaybackNotifications.collectAsState()
     val darkTheme by viewModel.darkTheme.collectAsState()
     val themeMode by viewModel.themeMode.collectAsState()
@@ -116,43 +114,13 @@ fun SettingsScreen(
             ) {
                 Column(modifier = Modifier.padding(vertical = 8.dp)) {
                     SettingsItem(
-                        icon = Icons.Filled.Notifications,
-                        title = stringResource(R.string.settings_notifications_enable),
-                        subtitle = stringResource(R.string.settings_notifications_enable_desc),
-                        trailing = {
-                            Switch(
-                                checked = notificationsEnabled,
-                                onCheckedChange = { viewModel.setNotificationsEnabled(it) }
-                            )
-                        }
-                    )
-
-                    HorizontalDivider()
-
-                    SettingsItem(
                         icon = Icons.Filled.MusicNote,
                         title = stringResource(R.string.settings_notifications_playback),
                         subtitle = stringResource(R.string.settings_notifications_playback_desc),
                         trailing = {
                             Switch(
                                 checked = showPlaybackNotifications,
-                                onCheckedChange = { viewModel.setShowPlaybackNotifications(it) },
-                                enabled = notificationsEnabled
-                            )
-                        }
-                    )
-
-                    HorizontalDivider()
-
-                    SettingsItem(
-                        icon = Icons.Filled.VolumeUp,
-                        title = stringResource(R.string.settings_notifications_sound),
-                        subtitle = stringResource(R.string.settings_notifications_sound_desc),
-                        trailing = {
-                            Switch(
-                                checked = notificationSoundEnabled,
-                                onCheckedChange = { viewModel.setNotificationSoundEnabled(it) },
-                                enabled = notificationsEnabled
+                                onCheckedChange = { viewModel.setShowPlaybackNotifications(it) }
                             )
                         }
                     )

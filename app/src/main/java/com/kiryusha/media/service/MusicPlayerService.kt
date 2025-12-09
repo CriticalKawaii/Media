@@ -119,6 +119,13 @@ class MusicPlayerService : MediaSessionService() {
                         } else {
                             notificationManager.notify(NOTIFICATION_ID, createNotification())
                         }
+                    } else {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                            stopForeground(STOP_FOREGROUND_REMOVE)
+                        } else {
+                            @Suppress("DEPRECATION")
+                            stopForeground(true)
+                        }
                     }
                 }
             }
@@ -129,6 +136,13 @@ class MusicPlayerService : MediaSessionService() {
                         serviceScope.launch {
                             if (shouldShowNotification()) {
                                 notificationManager.notify(NOTIFICATION_ID, createNotification())
+                            } else {
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                                    stopForeground(STOP_FOREGROUND_REMOVE)
+                                } else {
+                                    @Suppress("DEPRECATION")
+                                    stopForeground(true)
+                                }
                             }
                         }
                     }
@@ -144,6 +158,13 @@ class MusicPlayerService : MediaSessionService() {
                 serviceScope.launch {
                     if (shouldShowNotification()) {
                         notificationManager.notify(NOTIFICATION_ID, createNotification())
+                    } else {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                            stopForeground(STOP_FOREGROUND_REMOVE)
+                        } else {
+                            @Suppress("DEPRECATION")
+                            stopForeground(true)
+                        }
                     }
                 }
             }
@@ -184,9 +205,7 @@ class MusicPlayerService : MediaSessionService() {
     }
 
     private suspend fun shouldShowNotification(): Boolean {
-        val notificationsEnabled = appPreferences.areNotificationsEnabled().first()
-        val showPlaybackNotifications = appPreferences.shouldShowPlaybackNotifications().first()
-        return notificationsEnabled && showPlaybackNotifications
+        return appPreferences.shouldShowPlaybackNotifications().first()
     }
 
     @OptIn(UnstableApi::class)
@@ -205,8 +224,6 @@ class MusicPlayerService : MediaSessionService() {
         val currentItem = player.currentMediaItem
         val title = currentItem?.mediaMetadata?.title?.toString() ?: "Music Player"
         val artist = currentItem?.mediaMetadata?.artist?.toString() ?: ""
-
-        val notificationSoundEnabled = appPreferences.isNotificationSoundEnabled().first()
 
         val previousIntent = Intent(ACTION_PREVIOUS).apply {
             setPackage(packageName)
@@ -263,6 +280,7 @@ class MusicPlayerService : MediaSessionService() {
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setOngoing(true)
+            .setSilent(true)
             .addAction(previousAction)
             .addAction(playPauseAction)
             .addAction(nextAction)
@@ -271,10 +289,6 @@ class MusicPlayerService : MediaSessionService() {
                     .setMediaSession(mediaSession?.sessionCompatToken)
                     .setShowActionsInCompactView(0, 1, 2)
             )
-
-        if (!notificationSoundEnabled) {
-            builder.setSilent(true)
-        }
 
         val artworkUri = currentItem?.mediaMetadata?.artworkUri
         if (artworkUri != null) {
