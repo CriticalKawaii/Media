@@ -199,6 +199,8 @@ fun PlayerScreen(
                             title = track.title,
                             artist = track.artist
                         )
+
+                        Spacer(modifier = Modifier.height(16.dp))
                     }
 
                     Column(
@@ -438,6 +440,7 @@ fun TrackInfo(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .fillMaxWidth()
+            .wrapContentHeight()
             .padding(horizontal = 16.dp)
     ) {
         Text(
@@ -449,6 +452,7 @@ fun TrackInfo(
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier
                 .fillMaxWidth()
+                .wrapContentHeight()
                 .basicMarquee(
                     iterations = Int.MAX_VALUE,
                     delayMillis = 1200,
@@ -468,6 +472,7 @@ fun TrackInfo(
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier
                 .fillMaxWidth()
+                .wrapContentHeight()
                 .basicMarquee(
                     iterations = Int.MAX_VALUE,
                     delayMillis = 1200,
