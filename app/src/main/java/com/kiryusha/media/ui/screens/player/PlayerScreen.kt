@@ -473,6 +473,7 @@ fun TrackInfo(
             modifier = Modifier
                 .fillMaxWidth()
                 .wrapContentHeight()
+                .padding(bottom = 4.dp)
                 .basicMarquee(
                     iterations = Int.MAX_VALUE,
                     delayMillis = 1200,
