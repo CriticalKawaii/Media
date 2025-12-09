@@ -441,7 +441,7 @@ fun TrackInfo(
         modifier = Modifier
             .fillMaxWidth()
             .wrapContentHeight()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(horizontal = 16.dp)
     ) {
         Text(
             text = title,
@@ -465,13 +465,16 @@ fun TrackInfo(
 
         Text(
             text = artist,
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.bodyLarge.copy(
+                lineHeight = MaterialTheme.typography.bodyLarge.fontSize * 1.5f
+            ),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier
                 .fillMaxWidth()
+                .wrapContentHeight()
                 .basicMarquee(
                     iterations = Int.MAX_VALUE,
                     delayMillis = 1200,
