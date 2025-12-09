@@ -441,7 +441,7 @@ fun TrackInfo(
         modifier = Modifier
             .fillMaxWidth()
             .wrapContentHeight()
-            .padding(horizontal = 16.dp)
+            .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
         Text(
             text = title,
@@ -472,8 +472,6 @@ fun TrackInfo(
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier
                 .fillMaxWidth()
-                .wrapContentHeight()
-                .padding(bottom = 4.dp)
                 .basicMarquee(
                     iterations = Int.MAX_VALUE,
                     delayMillis = 1200,
