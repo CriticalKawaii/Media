@@ -5,7 +5,10 @@ import com.kiryusha.media.api.NetworkModule
 import com.kiryusha.media.database.dao.TrackDao
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.IOException
+import java.net.SocketTimeoutException
 import java.net.URLEncoder
+import java.net.UnknownHostException
 
 class LyricsRepository(private val trackDao: TrackDao) {
 
@@ -38,12 +41,23 @@ class LyricsRepository(private val trackDao: TrackDao) {
                         LyricsResult.NotFound
                     }
                 } else {
+                    val errorMessage = when (response.code()) {
+                        404 -> "Song not found in lyrics database"
+                        in 500..599 -> "Lyrics service is temporarily unavailable. Please try again later"
+                        else -> "Failed to fetch lyrics (Error ${response.code()})"
+                    }
                     Log.e("LyricsRepository", "API error: ${response.code()} - ${response.message()}")
-                    LyricsResult.Error("Failed to fetch lyrics: ${response.message()}")
+                    LyricsResult.Error(errorMessage)
                 }
             } catch (e: Exception) {
                 Log.e("LyricsRepository", "Exception fetching lyrics", e)
-                LyricsResult.Error("Network error: ${e.localizedMessage ?: "Unknown error"}")
+                val errorMessage = when (e) {
+                    is UnknownHostException -> "No internet connection. Please check your network and try again"
+                    is SocketTimeoutException -> "Connection timed out. Please check your internet connection"
+                    is IOException -> "Network error. Please check your internet connection and try again"
+                    else -> "An unexpected error occurred: ${e.localizedMessage ?: "Unknown error"}"
+                }
+                LyricsResult.Error(errorMessage)
             }
         }
     }
