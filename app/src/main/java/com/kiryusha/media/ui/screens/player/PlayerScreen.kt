@@ -474,7 +474,8 @@ fun TrackInfo(
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier
                 .fillMaxWidth()
-                .wrapContentHeight()
+                .heightIn(min = 32.dp)
+                .wrapContentHeight(unbounded = true)
                 .basicMarquee(
                     iterations = Int.MAX_VALUE,
                     delayMillis = 1200,
