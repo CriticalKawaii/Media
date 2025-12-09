@@ -108,7 +108,7 @@ class RegistrationActivity : BaseActivity() {
             override fun updateDrawState(ds: TextPaint) {
                 super.updateDrawState(ds)
                 ds.isUnderlineText = true
-                ds.color = Color.parseColor("#6200EE") // Цвет ссылки (Primary color)
+                ds.color = Color.parseColor("#FFFF4D68")
             }
         }
 

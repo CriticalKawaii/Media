@@ -389,9 +389,6 @@ class PlayerViewModel(
         }
     }
 
-    /**
-     * Clears the current lyrics state
-     */
     fun clearLyricsState() {
         _lyricsState.value = LyricsResult.Loading
     }

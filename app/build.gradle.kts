@@ -28,6 +28,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
     compileOptions {
@@ -86,7 +87,6 @@ dependencies {
 
     implementation("org.burnoutcrew.composereorderable:reorderable:0.9.6")
 
-    // Networking dependencies for lyrics API
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
